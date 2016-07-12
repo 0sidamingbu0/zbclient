@@ -39,28 +39,7 @@ sudo find / -name libmicrohttpd*
 #include <time.h>
 #include <stddef.h>
 
-//#include <libxml/parser.h>
-//#include <libxml/xmlmemory.h>
 
-//#include "parse_flags.h"
-/* 
-0xFAF8 =XIAOMIKAIGUAN1-zhuwo
-0x1AD6 =XIAOMIKAIGUAN2-ciwo
-0x9F68 =XIAOMIKAIGUAN3
-0xFC44 =XIAOMIMENCI
-0x32FE =XIAOMIRENTI
-
-
-0x5C4E =KETING
-0xB358 =CANTING
-0xBE8A =CHUFANG
-0xE6B0 =MENTING
-0x5680 =GUODAO
-0x7710 =ZHUWO
-0x9590 =CIWO
-
-
-*/
 #define XMKG_M_ID     		0X2d81 //a
 #define XMKG_X_ID      		0Xeb38
 #define XMKG_ENTER_ID      	0Xced9
@@ -172,51 +151,31 @@ typedef unsigned short uint16_t;
 #define MXJ_SENSOR_DATA              0x07
 #define MXJ_CONFIG_WRITE             0x08
 #define MXJ_CONFIG_RETURN            0x09
-#define MXJ_CONFIG_GET               0x0a
-#define MXJ_SEND_IDXS                0x0B
-#define MXJ_SEND_RESPONSE            0x0D
-
-
-
+#define MXJ_CONFIG_GET               0x0A
+#define MXJ_GET_IDXS                 0x0B
+#define MXJ_SEND_IDXS                0x0C
+#define MXJ_SEND_RESPONSE            0x0D 
+#define MXJ_PING_REQUEST             0x0F
+#define MXJ_DEVICE_ANNCE             0x0E
+#define MXJ_PING_RESPONSE            0x10
+#define MXJ_SEND_RESET               0x11  
 #define MXJ_XIAOMI18                 0x18
 #define MXJ_XIAOMI1C                 0x1C
 #define MXJ_SEND_DATA                0xff
 
-#define DEV_SIZE                200
 
 
 
-typedef struct
-{
-  uint16_t id;
-  uint8_t state1;
-  uint8_t state2;
-  uint8_t state3;
-  uint8_t enable;
-} MXJ_CONFIG_STRUCT;
 
-typedef struct
-{
-  uint16_t id;
-  uint8_t type;
-  uint8_t ctrl;
-  uint16_t devid;
-  uint8_t idx;
-  uint8_t light[3];
-  uint8_t state[3];
-  uint8_t registered;
-} MXJ_DEVICE;
-MXJ_DEVICE mxj_device[DEV_SIZE];
-uint8_t devsize=0; 
+
 int usart_fd;
-uint8_t rebuf[100];    
-uint8_t rx_step = 0;	
+  
 uint8_t state = WW_STATE;
 uint8_t  LEN_Token;
 uint8_t  FSC_Token;
 uint8_t  tempDataLen = 0;
-uint8_t rxbuf[100];
-uint8_t len=0;
+uint8_t rxbuf[200];
+uint8_t len_global=0;
 int humand = 0;
 int carded = 0;
 int led_state = 0;
@@ -479,7 +438,7 @@ char *re_body;
 			const char* body = MHD_lookup_connection_value (connection, MHD_POSTDATA_KIND, NULL);		
 			printf("length=%s\n",length);
 			printf("body=%s\n",body);
-			  
+			printf("url=%s\n",url); 
 			if(length != NULL && body != NULL)
 			{		  
 				len2 = atoi(length);
@@ -494,7 +453,7 @@ char *re_body;
 				printf("now datetime: %d-%d-%d %d:%d:%d - New %s request for %s using version %s - len2=0 re_body=\nNULL\n End \n", tblock->tm_year, tblock->tm_mon, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,method, url, version);
 			}
 		
-			if ((sp = fopen("/home/pi/idol/re.txt","a+")) != NULL)
+			if ((sp = fopen("/home/pi/zbclient/re.txt","a+")) != NULL)
 			{
 				fprintf(sp,"now datetime: %d-%d-%d %d:%d:%d - New %s request for %s using version %s - len2=%d re_body=\n%s\n End \n", tblock->tm_year, tblock->tm_mon, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,method, url, version,len2,re_body);
 				fclose(sp);
@@ -671,30 +630,7 @@ void thread_send(void)
 //========thread start=========//
 //AA C0 IDH IDL STATE1 STATE2 STATE3 REV CRC AB
 
-void del_dev(void)
-{
-	mxj_device[devsize-1].id=0;
-	mxj_device[devsize-1].type=0;
-	mxj_device[devsize-1].idx=0;
-	mxj_device[devsize-1].registered=0;
-	mxj_device[devsize-1].ctrl=0;
-	devsize--;
-}
 
-
-int find_dev(int id)
-{
-	int i = 0;
-	for(i=0;i<devsize;i++)
-		if(mxj_device[i].id == id)
-			{
-				//printf("find:%d",i);
-				return i;
-			}
-
-	//printf("not find");
-	return -1;
-}
 void recieve_usart(uint8_t *rx,uint8_t len)
 {
   int i=0,j=0;
@@ -1337,7 +1273,7 @@ void thread(void)
         if (crcout == FSC_Token)
         {
           //printf("recieve:");
-          len = LEN_Token+1;
+          len_global = LEN_Token+1;
           for(ii=0;ii<LEN_Token+1;ii++)
             //printf("%02x",rxbuf[ii]);
             
@@ -1377,11 +1313,7 @@ int main(void)
     pthread_t send_usart_pr; 
   struct MHD_Daemon *daemon;
   uint8_t i=0;
-  for(i=0;i<DEV_SIZE;i++)
-  {
-    mxj_device[i].registered = 0;
-	mxj_device[i].ctrl = 0;
-  }
+  
 
   json_str = (char*)calloc(2000,sizeof(char));
   
