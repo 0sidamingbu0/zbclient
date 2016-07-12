@@ -262,7 +262,7 @@ void build_json()
       //printf("state = %s\n",json_object_to_json_string(state));
             
 			
-      //printf("control = %s\n",json_object_to_json_string(control));
+      ////printf("control = %s\n",json_object_to_json_string(control));
             
 			json_object *dev = json_object_new_object();
 			json_object_object_add(dev, "id", json_object_new_int(mxj_device[i].id));
@@ -390,7 +390,7 @@ char *FromUserName;
 
 char *re_body;
   FILE *sp;
-  printf ("====New %s request for %s using version %s\n", method, url, version);
+  //printf ("====New %s request for %s using version %s\n", method, url, version);
  
   time(&now);
   tblock = localtime(&now);
@@ -436,32 +436,33 @@ char *re_body;
 		
 		const char* length = MHD_lookup_connection_value (connection, MHD_HEADER_KIND, MHD_HTTP_HEADER_CONTENT_LENGTH); 	
 			const char* body = MHD_lookup_connection_value (connection, MHD_POSTDATA_KIND, NULL);		
-			printf("length=%s\n",length);
-			printf("body=%s\n",body);
-			printf("url=%s\n",url); 
+			//printf("length=%s\n",length);
+			//printf("body=%s\n",body);
+			//printf("url=%s\n",url); 
 			if(length != NULL && body != NULL)
 			{		  
 				len2 = atoi(length);
-				re_body = (uint8_t*)calloc(len2,sizeof(uint8_t));
-				strncpy(re_body,body,len2);
-				printf("now datetime: %d-%d-%d %d:%d:%d - New %s request for %s using version %s - len2=%d re_body=\n%s\n End \n", tblock->tm_year, tblock->tm_mon, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,method, url, version,len2,re_body);
+				//printf("len2=%d\n",len2); 
+				//re_body = (uint8_t*)calloc(len2,sizeof(uint8_t));
+				//strncpy(re_body,body,len2);
+				printf("POST RECIEVE:time=%d-%d-%d %d:%d:%d len=%d url=%s version=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version,body);
 			}
 			else if(body != NULL)
 			{
 				len2 = 0;
 				post_type = 0;
-				printf("now datetime: %d-%d-%d %d:%d:%d - New %s request for %s using version %s - len2=0 re_body=\nNULL\n End \n", tblock->tm_year, tblock->tm_mon, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,method, url, version);
+				printf("POST RECIEVE:time: %d-%d-%d %d:%d:%d len=0 url=%s version=%s body=NULL\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version);
 			}
 		
 			if ((sp = fopen("/home/pi/zbclient/re.txt","a+")) != NULL)
 			{
-				fprintf(sp,"now datetime: %d-%d-%d %d:%d:%d - New %s request for %s using version %s - len2=%d re_body=\n%s\n End \n", tblock->tm_year, tblock->tm_mon, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,method, url, version,len2,re_body);
+				fprintf(sp,"POST RECIEVE:time=%d-%d-%d %d:%d:%d len=%d url=%s version=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version,body);
 				fclose(sp);
 			}
 		
 			if(len2 != 0)
 			{
-				json_object *my_object = json_tokener_parse(re_body);
+				json_object *my_object = json_tokener_parse(body);
 				if(json_object_to_json_string(my_object) != NULL && (0 != strcmp (json_object_to_json_string(my_object), "null")))
 				{
 					  uint16_t id=0;
@@ -490,7 +491,7 @@ char *re_body;
 				  
 					 
 				  
-					  printf("\n");
+					  //printf("\n");
 					  //printf("state11 = %d\n", state11);
 					  //printf("state22 = %d\n", state22);
 					  //printf("state33 = %d\n", state33);
@@ -498,7 +499,7 @@ char *re_body;
 				}
 				
 			}
-			
+		
 		*upload_data_size = 0;
 		return MHD_YES;
 	  }
@@ -574,7 +575,7 @@ void send_usart(uint8_t *data,uint8_t len) //id,state1,state2,state3 1=¿ª,0=¹Ø,2
   }
   txbuf[len+2] = crc;
   //printf("\n");
-  printf("fifo_add %d:\n",len + 3);
+  //printf("fifo_add %d:\n",len + 3);
 
   fifo_add(txbuf,len+3);
   	/*
@@ -600,18 +601,34 @@ void thread_send(void)
 		else
 			digitalWrite(24,LOW);
 
-		
+		FILE *sp;
 		if(fifo_read(&txbuf,&len))
-		{
-			printf("send %d: ",fifo_start);
-
-		  for(i=0;i<len;i++)
-		  {
-		    serialPutchar(usart_fd,txbuf[i]);
-		    printf("%02x ",txbuf[i]);
-		  }
-		  printf("\n");
+		{			
+			time(&now);
+			tblock = localtime(&now);
+			
+			if ((sp = fopen("/home/pi/zbclient/re.txt","a+")) != NULL)
+			{
+				fprintf(sp,"USART SEND:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
+				for(i=0;i<len;i++)
+				  {
+				    fprintf(sp,"%02x ",txbuf[i]);
+				  }
+				  fprintf(sp,"\n");
+				  fclose(sp);
+			}
+			
+			printf("USART SEND:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
+			for(i=0;i<len;i++)
+			{
+				serialPutchar(usart_fd,txbuf[i]);
+				printf("%02x ",txbuf[i]);
+			}
+			printf("\n");
 		}
+
+		
+		  
 
 		usleep(5000);
 		led_state++;
@@ -640,13 +657,26 @@ void recieve_usart(uint8_t *rx,uint8_t len)
   led_state = 0;
   time(&now);
   tblock = localtime(&now);
-  printf("\n");
-  printf("recieved:%d - at: %d-%d-%d %d:%d:%d\n",len,tblock->tm_year, tblock->tm_mon, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec);
-  
+  //printf("\n");
+  //printf("recieved:%d - at: %d-%d-%d %d:%d:%d\n",len,tblock->tm_year, tblock->tm_mon, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec);
+  printf("USART RECIEVE:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
   for(i=0;i<len;i++)
-    printf("%02x ",rx[i]);
+	  printf("%02x ",rx[i]);
   printf("\n");
-  printf("------------------------\n");
+
+
+  
+  FILE *sp;
+  if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+	{
+		fprintf(sp,"USART RECIEVE:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
+		for(i=0;i<len;i++)
+    		fprintf(sp,"%02x ",rx[i]);
+		fprintf(sp,"\n");
+		fclose(sp);
+	}
+  
+
   
  
   if(len>=4)
@@ -669,8 +699,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		
 		if(id == SWITCH_OUTSIDE_ID) 
 	   	{
-	        printf("control up - find id = %d\n",i);
-		    printf("id:%4x\n",id);
+	        //printf("control up - find id = %d\n",i);
+		    //printf("id:%4x\n",id);
 			if(rx[8] == 1 && rx[9]!=2)
 			{				
 				flag_light1 = rx[9];
@@ -687,8 +717,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 				
 		if(id == LIGHT_INSIDE_ID) 
 	   	{
-	        printf("control up - find id = %d\n",i);
-		    printf("id:%4x\n",id);
+	        //printf("control up - find id = %d\n",i);
+		    //printf("id:%4x\n",id);
 			if(rx[8] == 1 && rx[9]!=2)
 			{				
 				flag_light1 = rx[9];
@@ -703,8 +733,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 
 		if(id == DOOR_IN_ID) 
 	   	{
-	        printf("control up - find id = %d\n",i);
-		    printf("id:%4x\n",id);
+	        //printf("control up - find id = %d\n",i);
+		    //printf("id:%4x\n",id);
 			if(rx[9]==0)
 			{				
 				if(carded <= 1)
@@ -722,8 +752,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 //////=============
 	if(id == SWITCH2_ID_1) 
 	{
-		printf("control up - find id = %d\n",i);
-		printf("id:%4x\n",id);
+		//printf("control up - find id = %d\n",i);
+		//printf("id:%4x\n",id);
 		if(rx[8] == 1 && rx[9]!=2)
 		{				
 			flag_light21 = rx[9];
@@ -737,8 +767,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	 }
 	if(id == SWITCH2_ID_2) 
 	{
-		printf("control up - find id = %d\n",i);
-		printf("id:%4x\n",id);
+		//printf("control up - find id = %d\n",i);
+		//printf("id:%4x\n",id);
 		if(rx[8] == 1 && rx[9]!=2)
 		{				
 			flag_light22 = rx[9];
@@ -752,8 +782,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	 }
 	if(id == SWITCH2_ID_3) 
 	{
-		printf("control up - find id = %d\n",i);
-		printf("id:%4x\n",id);
+		//printf("control up - find id = %d\n",i);
+		//printf("id:%4x\n",id);
 		if(rx[8] == 1 && rx[9]!=2)
 		{				
 			flag_light23 = rx[9];
@@ -767,8 +797,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	 }
 	if(id == SWITCH2_ID_4) 
 	{
-		printf("control up - find id = %d\n",i);
-		printf("id:%4x\n",id);
+		//printf("control up - find id = %d\n",i);
+		//printf("id:%4x\n",id);
 		if(rx[8] == 1 && rx[9]!=2)
 		{				
 			flag_light24 = rx[9];
@@ -782,8 +812,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	 }
 	if(id == SWITCH2_ID_5) 
 	{
-		printf("control up - find id = %d\n",i);
-		printf("id:%4x\n",id);
+		//printf("control up - find id = %d\n",i);
+		//printf("id:%4x\n",id);
 		if(rx[8] == 1 && rx[9]!=2)
 		{				
 			flag_light25 = rx[9];
@@ -797,8 +827,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	 }
 	if(id == SWITCH2_ID_6) 
 	{
-		printf("control up - find id = %d\n",i);
-		printf("id:%4x\n",id);
+		//printf("control up - find id = %d\n",i);
+		//printf("id:%4x\n",id);
 		if(rx[8] == 1 && rx[9]!=2)
 		{				
 			flag_light26 = rx[9];
@@ -813,7 +843,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 
 	if(id == SWITCHN1_ID_1) 
 	{
-		printf("id:%4x\n",id);
+		//printf("id:%4x\n",id);
 		if(rx[8] == 1 && rx[9]==0)
 		{				
 			static int flag = 1;
@@ -826,7 +856,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 
 	if(id == SWITCHN2_ID_1) 
 	{
-		printf("id:%4x\n",id);
+		//printf("id:%4x\n",id);
 		if(rx[8] == 1 && rx[9]==0)
 		{				
 		
@@ -845,7 +875,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	 }
 	if(id == SWITCHN3_ID_1) 
 	{
-		printf("id:%4x\n",id);
+		//printf("id:%4x\n",id);
 		if(rx[8] == 1 && rx[9]==0)
 		{				
 			static int flag1 = 1;
@@ -873,8 +903,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 
 	if(id == SWITCH3_ID_3) 
 	{
-		printf("control up - find id = %d\n",i);
-		printf("id:%4x\n",id);
+		//printf("control up - find id = %d\n",i);
+		//printf("id:%4x\n",id);
 		if(rx[8] == 1 && rx[9]!=2)
 		{				
 			MXJ_SendCtrlMessage(POWER_ID_1,1,rx[9],rx[9],rx[9]);
@@ -882,8 +912,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	}
 	if(id == SWITCH3_ID_4) 
 	{
-		printf("control up - find id = %d\n",i);
-		printf("id:%4x\n",id);
+		//printf("control up - find id = %d\n",i);
+		//printf("id:%4x\n",id);
 		if(rx[8] == 1 && rx[9]!=2)
 		{				
 			MXJ_SendCtrlMessage(POWER_ID_2,1,rx[9],rx[9],rx[9]);
@@ -891,8 +921,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	}
 	if(id == SWITCH3_ID_5) 
 	{
-		printf("control up - find id = %d\n",i);
-		printf("id:%4x\n",id);
+		//printf("control up - find id = %d\n",i);
+		//printf("id:%4x\n",id);
 		if(rx[8] == 1 && rx[9]!=2)
 		{				
 			MXJ_SendCtrlMessage(POWER_ID_3,1,rx[9],rx[9],rx[9]);
@@ -900,8 +930,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	}
 	if(id == SWITCH3_ID_6) 
 	{
-		printf("control up - find id = %d\n",i);
-		printf("id:%4x\n",id);
+		//printf("control up - find id = %d\n",i);
+		//printf("id:%4x\n",id);
 		if(rx[8] == 1 && rx[9]!=2)
 		{				
 			MXJ_SendCtrlMessage(POWER_ID_4,1,rx[9],rx[9],rx[9]);
@@ -909,8 +939,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	}
 	if(id == SWITCH3_ID_7) 
 	{
-		printf("control up - find id = %d\n",i);
-		printf("id:%4x\n",id);
+		//printf("control up - find id = %d\n",i);
+		//printf("id:%4x\n",id);
 		if(rx[8] == 1 && rx[9]!=2)
 		{				
 			MXJ_SendCtrlMessage(POWER_ID_5,1,rx[9],rx[9],rx[9]);
@@ -918,8 +948,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	}
 	if(id == SWITCH3_ID_8) 
 	{
-		printf("control up - find id = %d\n",i);
-		printf("id:%4x\n",id);
+		//printf("control up - find id = %d\n",i);
+		//printf("id:%4x\n",id);
 		if(rx[8] == 1 && rx[9]!=2)
 		{				
 			MXJ_SendCtrlMessage(POWER_ID_6,1,rx[9],rx[9],rx[9]);
@@ -927,8 +957,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	}
 	if(id == SWITCH3_ID_9) 
 	{
-		printf("control up - find id = %d\n",i);
-		printf("id:%4x\n",id);
+		//printf("control up - find id = %d\n",i);
+		//printf("id:%4x\n",id);
 		if(rx[8] == 1 && rx[9]!=2)
 		{				
 			MXJ_SendCtrlMessage(POWER_ID_7,1,rx[9],rx[9],rx[9]);
@@ -936,8 +966,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	}
 	if(id == SWITCH3_ID_10) 
 	{
-		printf("control up - find id = %d\n",i);
-		printf("id:%4x\n",id);
+		//printf("control up - find id = %d\n",i);
+		//printf("id:%4x\n",id);
 		if(rx[8] == 1 && rx[9]!=2)
 		{				
 			MXJ_SendCtrlMessage(POWER_ID_8,1,rx[9],rx[9],rx[9]);
@@ -974,11 +1004,11 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	if(cid == 6)
 	{
 		if(len != 13)break;
-		printf("control up - find id = %d\n",i);
-		printf("id:%4x\n",id);
+		//printf("control up - find id = %d\n",i);
+		//printf("id:%4x\n",id);
 		if(rx[11] == 0x20)
 		{
-			printf("double kick\n");
+			//printf("double kick\n");
 			if(id == XMKG_ENTER_ID)
 			{
 				MXJ_SendCtrlMessage(SWITCH_ALAM_ID,3,0,0,0);
@@ -1001,7 +1031,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		}
 		else
 		{
-			printf("action = %d\n",rx[12]);
+			//printf("action = %d\n",rx[12]);
 			if(id==XMKG_M_ID&&rx[12] == 1)//0=PRESSED
 			{				
 				flag_light1 = ! flag_light1;
@@ -1092,8 +1122,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	else if(cid == 0x406)
 	{
 		if(len != 13)break;
-		printf("control up - find id = %d\n",i);
-		printf("id:%4x\n",id);
+		//printf("control up - find id = %d\n",i);
+		//printf("id:%4x\n",id);
 		printf("human detected\n");
 		if(id == XIAOMIRENTI_ID)
 		{			
@@ -1115,7 +1145,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		temp <<= 8;
 		temp |= rx[12];
 		printf("temperature up - find id = %d\n",i);
-		printf("id:%4x\n",id);
+		//printf("id:%4x\n",id);
 		printf("temperature = %02f\n",(float)temp/100);
 		
 		if(temp > 3600 && temp_flag != 1)
@@ -1140,7 +1170,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		temp <<= 8;
 		temp |= rx[12];
 		printf("humidity up - find id = %d\n",i);
-		printf("id:%4x\n",id);
+		//printf("id:%4x\n",id);
 		printf("humidity = %02f\n",(float)temp/100);
 	}
   	
