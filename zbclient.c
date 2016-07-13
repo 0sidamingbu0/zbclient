@@ -38,6 +38,7 @@ sudo find / -name libmicrohttpd*
 #include "json.h"
 #include <time.h>
 #include <stddef.h>
+#include <curl.h>
 
 
 #define XMKG_M_ID     		0X2d81 //a
@@ -118,6 +119,8 @@ typedef unsigned short uint16_t;
 #define FCS_STATE      0x05
 
 #define PORT            8888
+#define PORT_CLIENT     8888
+
 #define POSTBUFFERSIZE  512
 #define MAXNAMESIZE     3000
 #define MAXANSWERSIZE   512
@@ -176,26 +179,13 @@ uint8_t  FSC_Token;
 uint8_t  tempDataLen = 0;
 uint8_t rxbuf[200];
 uint8_t len_global=0;
-int humand = 0;
-int carded = 0;
 int led_state = 0;
 
 
 time_t now;
 struct tm *tblock; 
-int shefang = 0;
-uint8_t flag_light1 = 0;
-uint8_t flag_light2 = 0;
 
-uint8_t flag_light21 = 0;
-uint8_t flag_light22 = 0;
-uint8_t flag_light23 = 0;
-uint8_t flag_light24 = 0;
-uint8_t flag_light25 = 0;
-uint8_t flag_light26 = 0;
-
-//uint8_t humaned = 0;
-//CURL* geturl;
+CURL* posturl;
 
 void send_usart(uint8_t *data,uint8_t len);
 void MXJ_SendRegisterMessage( uint16_t , uint8_t );
@@ -206,8 +196,7 @@ void MXJ_SendCtrlMessage( uint16_t ,uint8_t len, uint8_t , uint8_t , uint8_t );
 void MXJ_SendStateMessage( uint16_t );
 
 void MXJ_GetStateMessage( uint16_t id );
-void del_dev(void);
-int find_dev(int i);
+
 
 typedef struct
 {
@@ -223,11 +212,9 @@ uint8_t fifo_jinwei = 0;
 uint8_t fifo_start = 0;
 uint8_t fifo_end = 0;
 
-char *str = "undefine";
-char strxml[500];
+
 int post_type;
 
-char *json_str;
 struct connection_info_struct
 {
   int connectiontype;
@@ -235,7 +222,7 @@ struct connection_info_struct
   struct MHD_PostProcessor *postprocessor;
 };
 
-const char *askpage = "{\"devices\":[{\"id\":10552,\"type\":7,\"control\":{\"devid\":1234,\"lights\":[0,1]},\"status\":[]},{\"id\":2155,\"type\":3,\"control\":{\"devid\":6445,\"lights\":[1,2]},\"status\":[]},{\"id\":12345,\"type\":7,\"control\":{},\"status\":[1,1,0]}]}";
+const char *askpage = "{\"code\":\"0\",\"message\":\"success\"}";
 
 const char *greetingpage =
   "<html><body><h1>Welcome, %s!</center></h1></body></html>";
@@ -246,77 +233,11 @@ const char *errorpage =
 const char *idolpage =
   "<html><body>hello idol</body></html>";
 
-void build_json()
+
+long writer(void *data, int size, int nmemb, char *content)
 {
-	int i=0;
-  char str2[2000];
-  strcpy(str2,"{\"devices\":[");
-//	json_object *devices = json_object_new_array();
-/*
-	for(i=0;i<devsize;i++)
-		{      
-			json_object *state= json_object_new_array();
-			json_object_array_add(state, json_object_new_int(mxj_device[i].state[0]));
-			json_object_array_add(state, json_object_new_int(mxj_device[i].state[1]));
-			json_object_array_add(state, json_object_new_int(mxj_device[i].state[2]));
-      //printf("state = %s\n",json_object_to_json_string(state));
-            
-			
-      ////printf("control = %s\n",json_object_to_json_string(control));
-            
-			json_object *dev = json_object_new_object();
-			json_object_object_add(dev, "id", json_object_new_int(mxj_device[i].id));
-			json_object_object_add(dev, "type", json_object_new_int(mxj_device[i].type));				
-			json_object_object_add(dev, "status", state);
-			if(mxj_device[i].id == KETING_ID)
-				json_object_object_add(dev, "name", json_object_new_string("KETING_ID"));
-			if(mxj_device[i].id == CANTING_ID)
-				json_object_object_add(dev, "name", json_object_new_string("CANTING_ID"));
-			if(mxj_device[i].id == CHUFANG_ID)
-				json_object_object_add(dev, "name", json_object_new_string("CHUFANG_ID"));
-			if(mxj_device[i].id == MENTING_ID)
-				json_object_object_add(dev, "name", json_object_new_string("MENTING_ID"));
-			if(mxj_device[i].id == GUODAO_ID)
-				json_object_object_add(dev, "name", json_object_new_string("GUODAO_ID"));
-			if(mxj_device[i].id == ZHUWO_ID)
-				json_object_object_add(dev, "name", json_object_new_string("ZHUWO_ID"));
-			if(mxj_device[i].id == CIWO_ID)
-				json_object_object_add(dev, "name", json_object_new_string("CIWO_ID"));
-			
-      //printf("dev = %s\n",json_object_to_json_string(dev));
-      
-			//json_object_array_add(devices, dev);
-      //json_object *obj = json_object_array_get_idx(devices, i);
-      
-      
-      //snprintf (str2, MAXANSWERSIZE, json_object_to_json_string(obj));
-      strcat(str2,json_object_to_json_string(dev));
-      if(i<devsize-1)
-        strcat(str2,",");
-      else
-        strcat(str2,"]}");
-      
-      
-      //printf("------------------build-json-----------\n");
-	  
-			if(state!=NULL)
-				json_object_put(state);
-			if(dev!=NULL)
-				json_object_put(dev);
-
-				
-		}
-   
-   */
-
-   //printf("str2 = %s\n",str2); 
-   strcpy(json_str,str2);
-   //printf("build json_str = %s\n",json_str); 
-   //json_str=str2;
-   
-	
+	return 1;
 }
-
 
 static int
 send_page (struct MHD_Connection *connection, const char *page)
@@ -417,10 +338,7 @@ char *re_body;
 
   if (0 == strcmp (method, "GET"))
     {	
-		printf("get json_str = %s\n",json_str);
-		if(json_str!=NULL)
-			return send_page (connection,json_str);
-		else
+		//printf("get json_str = %s\n",json_str);
 			return send_page (connection, errorpage);
     }
   
@@ -454,7 +372,7 @@ char *re_body;
 				printf("POST RECIEVE:time: %d-%d-%d %d:%d:%d len=0 url=%s version=%s body=NULL\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version);
 			}
 		
-			if ((sp = fopen("/home/pi/zbclient/re.txt","a+")) != NULL)
+			if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 			{
 				fprintf(sp,"POST RECIEVE:time=%d-%d-%d %d:%d:%d len=%d url=%s version=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version,body);
 				fclose(sp);
@@ -465,37 +383,97 @@ char *re_body;
 				json_object *my_object = json_tokener_parse(body);
 				if(json_object_to_json_string(my_object) != NULL && (0 != strcmp (json_object_to_json_string(my_object), "null")))
 				{
-					  uint16_t id=0;
-					  uint8_t state11=0,state22=0,state33=0;
+					  uint16_t address=0;
+					  uint8_t index=0,resourceSum=0,commandint=255;
+					  const char * command;
 					  post_type = 1;
-					  json_object *type = NULL;
-					  json_object *name = NULL;
 					  
-					  json_object *devid = NULL;
-					  json_object_object_get_ex(my_object, "devid",&devid);
-					  json_object *state1 = NULL;
-					  json_object_object_get_ex(my_object, "state1",&state1);
-					  json_object *state2 = NULL;
-					  json_object_object_get_ex(my_object, "state2",&state2);
-					  json_object *state3 = NULL;
-					  json_object_object_get_ex(my_object, "state3",&state3);
-					  json_object_object_get_ex(my_object, "type",&type);
-					  json_object_object_get_ex(my_object, "name",&name);
-				  
-					  id = (uint16_t)json_object_get_int(devid);
-					  state11 = (uint16_t)json_object_get_int(state1);
-					  state22 = (uint16_t)json_object_get_int(state2);
-					  state33 = (uint16_t)json_object_get_int(state3);
-				  
-				  
-				  
-					 
-				  
-					  //printf("\n");
-					  //printf("state11 = %d\n", state11);
-					  //printf("state22 = %d\n", state22);
-					  //printf("state33 = %d\n", state33);
-					  printf("recieve post json= %s\n", json_object_to_json_string(my_object));
+					  json_object *Jaddress = NULL;
+					  json_object_object_get_ex(my_object, "address",&Jaddress);
+					  json_object *Jindex = NULL;
+					  json_object_object_get_ex(my_object, "index",&Jindex);
+					  json_object *Jcommand = NULL;
+					  json_object_object_get_ex(my_object, "command",&Jcommand);
+					  json_object *JresourceSum = NULL;
+					  json_object_object_get_ex(my_object, "resourceSum",&JresourceSum);
+					  
+					  address = (uint16_t)json_object_get_int(Jaddress);
+					  index = (uint16_t)json_object_get_int(Jindex);
+					  command = json_object_to_json_string(Jcommand);
+					  resourceSum = (uint16_t)json_object_get_int(JresourceSum);
+					  //printf("address=%d\n", address);
+					  //printf("index=%d\n", index);
+					  //printf("command=%s\n", command);
+					  //printf("resourceSum=%d\n", resourceSum);
+					  //printf("recieve post json= %s\n", json_object_to_json_string(my_object));
+
+					    if(0 == strcmp (url, "/zbClient/API/feedback/register"))
+					  	{
+					  		//printf("register ok\n");
+							MXJ_SendRegisterMessage( address, MXJ_REGISTER_OK);
+					  	}
+						if(0 == strcmp (url, "/zbClient/API/delete"))
+					  	{
+					  		//printf("delete\n");
+							MXJ_SendRegisterMessage( address, MXJ_REGISTER_FAILED);
+					  	}
+						if(0 == strcmp (url, "/zbClient/API/get/state"))
+					  	{
+					  		//printf("get state\n");
+							MXJ_GetStateMessage(address);
+					  	}
+						if(0 == strcmp (url, "/zbClient/API/send"))
+					  	{
+					  		//printf("control\n");
+					  		if(0 == strcmp (command, "\"On\""))
+					  		{
+					  			commandint = 1;
+					  		}
+					  		if(0 == strcmp (command, "\"Off\""))
+					  		{
+					  			commandint = 0;
+					  		}
+					  		if(0 == strcmp (command, "\"Hold\""))
+					  		{
+					  			commandint = 2;
+					  		}							
+					  		if(0 == strcmp (command, "\"Reverse\""))
+					  		{
+					  			commandint = 3;
+					  		}
+							//printf("commandint=%d\n",commandint);
+
+							if(commandint!=255)
+							{
+								if(index == 1)
+								{
+									MXJ_SendCtrlMessage(address ,resourceSum,commandint , 2 , 2 );
+								}
+								else if(index == 2)
+								{
+									MXJ_SendCtrlMessage(address ,resourceSum, 2 ,commandint, 2 );
+								}
+								else if(index == 3)
+								{
+									MXJ_SendCtrlMessage(address ,resourceSum, 2, 2 , commandint );
+								}
+							}
+					  	}
+						if(0 == strcmp (url, "/zbClient/API/info/get"))
+					  	{
+					  		//printf("get device\n");
+							MXJ_GetIdxMessage(address);
+					  	}
+						if(0 == strcmp (url, "/zbClient/API/ping"))
+					  	{
+					  		//printf("PING request\n");
+							MXJ_SendPingMessage(address);
+					  	}
+						if(0 == strcmp (url, "/zbClient/API/value/get"))
+					  	{
+					  		//printf("get data\n");
+							MXJ_GetStateMessage(address);
+					  	}
 				}
 				
 			}
@@ -504,9 +482,9 @@ char *re_body;
 		return MHD_YES;
 	  }
 	  else if(post_type == 2)
-	  	  return send_page (connection,strxml);
-	  else if(post_type == 1&&json_str!=NULL)
-		  return send_page (connection,json_str);
+	  	  return send_page (connection,askpage);
+	  else if(post_type == 1)
+		  return send_page (connection,askpage);
 	  else
 		  return send_page (connection, errorpage);  
   	}
@@ -607,7 +585,7 @@ void thread_send(void)
 			time(&now);
 			tblock = localtime(&now);
 			
-			if ((sp = fopen("/home/pi/zbclient/re.txt","a+")) != NULL)
+			if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 			{
 				fprintf(sp,"USART SEND:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
 				for(i=0;i<len;i++)
@@ -652,7 +630,6 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 {
   int i=0,j=0;
   int id=0,cid=0;
-  int tempctrl[3]={2,2,2};
   digitalWrite(27,HIGH);
   led_state = 0;
   time(&now);
@@ -696,308 +673,205 @@ void recieve_usart(uint8_t *rx,uint8_t len)
   switch(rx[0])
   {
     case MXJ_CTRL_UP:
+	{
+		char* event;
+		switch(rx[9])
+		{
+			case 0: event = "PressDown";break;
+			case 1: event = "PressUp";break;
+			case 2: event = "DoubleClick";break;
+			case 3: event = "Click";break;
+			case 4: event = "BodyMove";break;
+			case 5: event = "ReportData";break;
+			case 6: event = "LongPress";break;
+			case 7: event = "TriggerByCloud";break;	
+			default : event = "Unknow event";
+		}
+		char str[200]={0};
+		char str_url[200]={0};
+		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\"}",id,rx[8],event);
+		sprintf(str_url,"127.0.0.1:%d/device/API/command",PORT_CLIENT);
+		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
+		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
+		curl_easy_perform(posturl);	
 		
-		if(id == SWITCH_OUTSIDE_ID) 
-	   	{
-	        //printf("control up - find id = %d\n",i);
-		    //printf("id:%4x\n",id);
-			if(rx[8] == 1 && rx[9]!=2)
-			{				
-				flag_light1 = rx[9];
-				MXJ_SendCtrlMessage(LIGHT_INSIDE_ID,3,rx[9],2,2);
-			}
-			else if(rx[8] == 2 && rx[9]!=2)
-			{
-				flag_light2 = rx[9];
-				MXJ_SendCtrlMessage(LIGHT_INSIDE_ID,3,2,2,rx[9]);
-			}
-
-	     }
-
-				
-		if(id == LIGHT_INSIDE_ID) 
-	   	{
-	        //printf("control up - find id = %d\n",i);
-		    //printf("id:%4x\n",id);
-			if(rx[8] == 1 && rx[9]!=2)
-			{				
-				flag_light1 = rx[9];
-				MXJ_SendCtrlMessage(SWITCH_OUTSIDE_ID,3,rx[9],2,2);
-			}
-			else if(rx[8] == 2 && rx[9]!=2)
-			{
-				flag_light2 = rx[9];
-				MXJ_SendCtrlMessage(SWITCH_OUTSIDE_ID,3,2,2,rx[9]);
-			}
-	     }
-
-		if(id == DOOR_IN_ID) 
-	   	{
-	        //printf("control up - find id = %d\n",i);
-		    //printf("id:%4x\n",id);
-			if(rx[9]==0)
-			{				
-				if(carded <= 1)
-				{
-					MXJ_SendCtrlMessage(POWER_ID,1,1,1,1);
-					carded = 10;
-				}	
-				if(carded > 1 )
-					carded = 10;
-			}
-	     }
-
-
-
-//////=============
-	if(id == SWITCH2_ID_1) 
-	{
-		//printf("control up - find id = %d\n",i);
-		//printf("id:%4x\n",id);
-		if(rx[8] == 1 && rx[9]!=2)
-		{				
-			flag_light21 = rx[9];
-			flag_light24 = rx[9];
-			MXJ_SendCtrlMessage(SWITCH2_ID_4,3,rx[9],2,2);
-		}
-		else if(rx[8] == 2 && rx[9]!=2)
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 		{
-			MXJ_SendCtrlMessage(SWITCH2_ID_4,3,2,2,rx[9]);
-		}	
-	 }
-	if(id == SWITCH2_ID_2) 
-	{
-		//printf("control up - find id = %d\n",i);
-		//printf("id:%4x\n",id);
-		if(rx[8] == 1 && rx[9]!=2)
-		{				
-			flag_light22 = rx[9];
-			flag_light25 = rx[9];
-			MXJ_SendCtrlMessage(SWITCH2_ID_5,3,rx[9],2,2);
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			  fclose(sp);
 		}
-		else if(rx[8] == 2 && rx[9]!=2)
-		{
-			MXJ_SendCtrlMessage(SWITCH2_ID_5,3,2,2,rx[9]);
-		}
-	 }
-	if(id == SWITCH2_ID_3) 
-	{
-		//printf("control up - find id = %d\n",i);
-		//printf("id:%4x\n",id);
-		if(rx[8] == 1 && rx[9]!=2)
-		{				
-			flag_light23 = rx[9];
-			flag_light26 = rx[9];
-			MXJ_SendCtrlMessage(SWITCH2_ID_6,3,rx[9],2,2);
-		}
-		else if(rx[8] == 2 && rx[9]!=2)
-		{
-			MXJ_SendCtrlMessage(SWITCH2_ID_6,3,2,2,rx[9]);
-		}
-	 }
-	if(id == SWITCH2_ID_4) 
-	{
-		//printf("control up - find id = %d\n",i);
-		//printf("id:%4x\n",id);
-		if(rx[8] == 1 && rx[9]!=2)
-		{				
-			flag_light24 = rx[9];
-			flag_light21 = rx[9];
-			MXJ_SendCtrlMessage(SWITCH2_ID_1,3,rx[9],2,2);
-		}
-		else if(rx[8] == 2 && rx[9]!=2)
-		{
-			MXJ_SendCtrlMessage(SWITCH2_ID_1,3,2,2,rx[9]);
-		}
-	 }
-	if(id == SWITCH2_ID_5) 
-	{
-		//printf("control up - find id = %d\n",i);
-		//printf("id:%4x\n",id);
-		if(rx[8] == 1 && rx[9]!=2)
-		{				
-			flag_light25 = rx[9];
-			flag_light22 = rx[9];
-			MXJ_SendCtrlMessage(SWITCH2_ID_2,3,rx[9],2,2);
-		}
-		else if(rx[8] == 2 && rx[9]!=2)
-		{
-			MXJ_SendCtrlMessage(SWITCH2_ID_2,3,2,2,rx[9]);
-		}
-	 }
-	if(id == SWITCH2_ID_6) 
-	{
-		//printf("control up - find id = %d\n",i);
-		//printf("id:%4x\n",id);
-		if(rx[8] == 1 && rx[9]!=2)
-		{				
-			flag_light26 = rx[9];
-			flag_light23 = rx[9];
-			MXJ_SendCtrlMessage(SWITCH2_ID_3,3,rx[9],2,2);
-		}
-		else if(rx[8] == 2 && rx[9]!=2)
-		{
-			MXJ_SendCtrlMessage(SWITCH2_ID_3,3,2,2,rx[9]);
-		}
-	 }
-
-	if(id == SWITCHN1_ID_1) 
-	{
-		//printf("id:%4x\n",id);
-		if(rx[8] == 1 && rx[9]==0)
-		{				
-			static int flag = 1;
-			flag = 3-flag;
-			MXJ_SendCtrlMessage(SWITCHN3_ID_1,3,flag-1,2,2);
-			MXJ_SendCtrlMessage(SWITCHN1_ID_1,1,flag-1,2,2);
-			MXJ_SendCtrlMessage(POWERN_ID_1,1,flag-1,2,2);
-		}
-	 }
-
-	if(id == SWITCHN2_ID_1) 
-	{
-		//printf("id:%4x\n",id);
-		if(rx[8] == 1 && rx[9]==0)
-		{				
-		
-			static int flag1 = 1;
-			flag1 = 3-flag1;
-			MXJ_SendCtrlMessage(SWITCHN3_ID_1,3,2,flag1-1,2);
-			MXJ_SendCtrlMessage(SWITCHN2_ID_1,2,flag1-1,2,2);
-		}
-		if(rx[8] == 2 && rx[9]==0)
-		{				
-			static int flag2 = 1;
-			flag2 = 3-flag2;
-			MXJ_SendCtrlMessage(SWITCHN3_ID_1,3,2,2,flag2-1);
-			MXJ_SendCtrlMessage(SWITCHN2_ID_1,2,2,flag2-1,2);
-		}
-	 }
-	if(id == SWITCHN3_ID_1) 
-	{
-		//printf("id:%4x\n",id);
-		if(rx[8] == 1 && rx[9]==0)
-		{				
-			static int flag1 = 1;
-			flag1 = 3-flag1;
-			MXJ_SendCtrlMessage(SWITCHN1_ID_1,1,flag1-1,0,0);
-			MXJ_SendCtrlMessage(SWITCHN3_ID_1,3,flag1-1,2,2);
-		}
-		if(rx[8] == 2 && rx[9]==0)
-		{				
-			static int flag2 = 1;
-			flag2 = 3-flag2;
-			MXJ_SendCtrlMessage(SWITCHN2_ID_1,2,flag2-1,2,0);
-			MXJ_SendCtrlMessage(SWITCHN3_ID_1,3,2,flag2-1,2);
-		}
-		if(rx[8] == 3 && rx[9]==0)
-		{				
-			static int flag3 = 1;
-			flag3 = 3-flag3;
-			MXJ_SendCtrlMessage(SWITCHN2_ID_1,2,2,flag3-1,0);
-			MXJ_SendCtrlMessage(SWITCHN3_ID_1,3,2,2,flag3-1);
-		}
-	 }
-
-
-
-	if(id == SWITCH3_ID_3) 
-	{
-		//printf("control up - find id = %d\n",i);
-		//printf("id:%4x\n",id);
-		if(rx[8] == 1 && rx[9]!=2)
-		{				
-			MXJ_SendCtrlMessage(POWER_ID_1,1,rx[9],rx[9],rx[9]);
-		}
-	}
-	if(id == SWITCH3_ID_4) 
-	{
-		//printf("control up - find id = %d\n",i);
-		//printf("id:%4x\n",id);
-		if(rx[8] == 1 && rx[9]!=2)
-		{				
-			MXJ_SendCtrlMessage(POWER_ID_2,1,rx[9],rx[9],rx[9]);
-		}
-	}
-	if(id == SWITCH3_ID_5) 
-	{
-		//printf("control up - find id = %d\n",i);
-		//printf("id:%4x\n",id);
-		if(rx[8] == 1 && rx[9]!=2)
-		{				
-			MXJ_SendCtrlMessage(POWER_ID_3,1,rx[9],rx[9],rx[9]);
-		}
-	}
-	if(id == SWITCH3_ID_6) 
-	{
-		//printf("control up - find id = %d\n",i);
-		//printf("id:%4x\n",id);
-		if(rx[8] == 1 && rx[9]!=2)
-		{				
-			MXJ_SendCtrlMessage(POWER_ID_4,1,rx[9],rx[9],rx[9]);
-		}
-	}
-	if(id == SWITCH3_ID_7) 
-	{
-		//printf("control up - find id = %d\n",i);
-		//printf("id:%4x\n",id);
-		if(rx[8] == 1 && rx[9]!=2)
-		{				
-			MXJ_SendCtrlMessage(POWER_ID_5,1,rx[9],rx[9],rx[9]);
-		}
-	}
-	if(id == SWITCH3_ID_8) 
-	{
-		//printf("control up - find id = %d\n",i);
-		//printf("id:%4x\n",id);
-		if(rx[8] == 1 && rx[9]!=2)
-		{				
-			MXJ_SendCtrlMessage(POWER_ID_6,1,rx[9],rx[9],rx[9]);
-		}
-	}
-	if(id == SWITCH3_ID_9) 
-	{
-		//printf("control up - find id = %d\n",i);
-		//printf("id:%4x\n",id);
-		if(rx[8] == 1 && rx[9]!=2)
-		{				
-			MXJ_SendCtrlMessage(POWER_ID_7,1,rx[9],rx[9],rx[9]);
-		}
-	}
-	if(id == SWITCH3_ID_10) 
-	{
-		//printf("control up - find id = %d\n",i);
-		//printf("id:%4x\n",id);
-		if(rx[8] == 1 && rx[9]!=2)
-		{				
-			MXJ_SendCtrlMessage(POWER_ID_8,1,rx[9],rx[9],rx[9]);
-		}
+						
+	break;
 	}
 
 
-//=========================
-		
-    break;
     
     case MXJ_REGISTER_REQUEST:
-      MXJ_SendRegisterMessage(id,MXJ_REGISTER_OK);
+      	//MXJ_SendRegisterMessage(id,MXJ_REGISTER_OK);
+    {
+      	char* deviceType;
+      	switch(cid)
+  		{
+			case 1: deviceType = "Gateway";break;
+			case 2: deviceType = "PM2.5Sensor";break;
+			case 3: deviceType = "BodySensor";break;
+			case 4: deviceType = "N_SwitchLightPanel";break;
+			case 5: deviceType = "FIVE";break;
+			case 6: deviceType = "PowerPanel";break;
+			case 7: deviceType = "N_Button";break;
+			case 8: deviceType = "LightSensor";break;
+			case 9: deviceType = "TemperatureSensor";break;
+			case 10: deviceType = "MagnetSensor";break;
+			case 11: deviceType = "SmokeSensor";break;
+			case 12: deviceType = "DoorController";break;
+			case 13: deviceType = "SoundSensor";break;
+			case 14: deviceType = "MiButton";break;
+			default : deviceType = "Unknow device";
+  		}
+		char str[200]={0};
+		char str_url[200]={0};
+		sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\"}",id,deviceType,rx[8]);
+		sprintf(str_url,"127.0.0.1:%d/device/API/deviceReg",PORT_CLIENT);
+		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
+		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
+		curl_easy_perform(posturl);
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+		{
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			  fclose(sp);
+		}
+		
+		//MXJ_SendRegisterMessage( id, MXJ_REGISTER_OK);
+
     break;
+	}
 
     case MXJ_SEND_STATE:
+	{
+		char str[200]={0};
+		char strtemp[200]={0};
+		char str_url[200]={0};
+		int i=0;
+		sprintf(str,"{\"address\":\"%d\",\"status\":[",id);
+		for(i=0;i<rx[7];i++)
+		{
+			sprintf(strtemp,"{\"value\":\"%d\"}",rx[8+i]);
+			strcat (str,strtemp);
+			if(i!=rx[7]-1&&rx[7]>1)
+			{
+				strcat (str,",");
+			}
+		}
+		strcat (str,"]}");
 		
-    break;
+		sprintf(str_url,"127.0.0.1:%d/device/API/feedback/status",PORT_CLIENT);
+		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
+		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
+		curl_easy_perform(posturl);
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+		{
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			  fclose(sp);
+		}	
+	break;
+	}
+
 
     case MXJ_SENSOR_DATA:
-      //MXJ_GetStateMessage(id);
-    break;
-
-    case MXJ_GET_STATE:
-		MXJ_SendCtrlMessage(id,3,2,2,2);
-    break;
-
-	case MXJ_SEND_RESPONSE:
+	{
+		char* type;
+		uint16_t tempdata=0;
+		tempdata=rx[10];
+		tempdata <<= 8;
+		tempdata |= rx[11];
+		switch(rx[9])
+		{
+			case 0: type = "Temperature";break;
+			case 1: type = "Humidity";break;
+			case 2: type = "PM2.5";break;
+			case 3: type = "PM10";break;
+			case 4: type = "Sound";break;
+			case 5: type = "Light";break;
+			case 6: type = "Smoke";break;
+			default : type = "Unknow type";
+		}
+		char str[200]={0};
+		char str_url[200]={0};
+		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"data\":\"%d\",\"type\":\"%s\"}",id,rx[8],tempdata,type);
+		sprintf(str_url,"127.0.0.1:%d/device/API/command",PORT_CLIENT);
+		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
+		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
+		curl_easy_perform(posturl);	
 		
-    break;	
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+		{
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			  fclose(sp);
+		}
+						
+	break;
+	}
+
+
+    case MXJ_PING_RESPONSE:
+	{
+		char str[200]={0};
+		char str_url[200]={0};
+		sprintf(str,"{\"address\":\"%d\"}",id);
+		sprintf(str_url,"127.0.0.1:%d/device/API/feedback/ping",PORT_CLIENT);
+		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
+		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
+		curl_easy_perform(posturl);
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+		{
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			  fclose(sp);
+		}    
+    break;
+	}
+
+    case MXJ_DEVICE_ANNCE:
+	{
+		char str[200]={0};
+		char str_url[200]={0};
+		sprintf(str,"{\"address\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,rx[11],rx[10],rx[9],rx[8],rx[7],rx[6],rx[5],rx[4]);
+		sprintf(str_url,"127.0.0.1:%d/device/API/report",PORT_CLIENT);
+		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
+		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
+		curl_easy_perform(posturl);
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+		{
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			  fclose(sp);
+		}
+
+    break;
+	}	  
+	
+	case MXJ_SEND_RESET:
+	{
+		char str[200]={0};
+		char str_url[200]={0};
+		sprintf(str,"{\"address\":\"%d\"}",id);
+		sprintf(str_url,"127.0.0.1:%d/device/API/rest",PORT_CLIENT);
+		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
+		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
+		curl_easy_perform(posturl);
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+		{
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			  fclose(sp);
+		}		
+    break;
+	} 
+
 		
     case MXJ_XIAOMI18:	
 
@@ -1009,114 +883,50 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		if(rx[11] == 0x20)
 		{
 			//printf("double kick\n");
-			if(id == XMKG_ENTER_ID)
+			char str[200]={0};
+			char str_url[200]={0};
+			sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\"}",id,1,"DoubleClick");
+			sprintf(str_url,"127.0.0.1:%d/device/API/command",PORT_CLIENT);
+			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
+			curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
+			curl_easy_perform(posturl);	
+			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+			if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 			{
-				MXJ_SendCtrlMessage(SWITCH_ALAM_ID,3,0,0,0);
-				shefang = 0;
-			}
-
-			if(id == XMKG_M_ID || id == XMKG_X_ID)
-			{
-				MXJ_SendCtrlMessage(LIGHT_INSIDE_ID,3,0,0,0);
-				MXJ_SendCtrlMessage(SWITCH_OUTSIDE_ID,3,0,0,0);
-				flag_light1 = 0;
-				flag_light2 = 0;
-			}
-
-			if(id==XMKG_DOOR_ID)//0=PRESSED
-			{								
-				MXJ_SendCtrlMessage(DOOR_OUT_ID,3,1,1,1);			
-			}
-
+				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+				  fclose(sp);
+			}			
 		}
 		else
 		{
-			//printf("action = %d\n",rx[12]);
-			if(id==XMKG_M_ID&&rx[12] == 1)//0=PRESSED
-			{				
-				flag_light1 = ! flag_light1;
-				MXJ_SendCtrlMessage(LIGHT_INSIDE_ID,3,flag_light1,2,2);
-				MXJ_SendCtrlMessage(SWITCH_OUTSIDE_ID,3,flag_light1,2,2);
-				
-			}
-			
-			if(id==XMKG_X_ID&&rx[12] == 1)
+			//printf("action = %d\n",rx[12]);			
+			char* event;
+			switch(rx[12])
 			{
-				flag_light2 = ! flag_light2;
-				MXJ_SendCtrlMessage(LIGHT_INSIDE_ID,3,2,2,flag_light2);
-				MXJ_SendCtrlMessage(SWITCH_OUTSIDE_ID,3,2,2,flag_light2);
-				
+				case 0: event = "PressDown";break;
+				case 1: event = "PressUp";break;
+				case 2: event = "DoubleClick";break;
+				case 3: event = "Click";break;
+				case 4: event = "BodyMove";break;
+				case 5: event = "ReportData";break;
+				case 6: event = "LongPress";break;
+				case 7: event = "TriggerByCloud";break; 
+				default : event = "Unknow event";
 			}
-			if(id==XMKG_ENTER_ID&&rx[12] == 1)
+			char str[200]={0};
+			char str_url[200]={0};
+			sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\"}",id,1,event);
+			sprintf(str_url,"127.0.0.1:%d/device/API/command",PORT_CLIENT);
+			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
+			curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
+			curl_easy_perform(posturl); 
+			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+			if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 			{
-				MXJ_SendCtrlMessage(SWITCH_ALAM_ID,3,1,0,0);
-				shefang = 1;
+				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+				  fclose(sp);
 			}
 
-			
-			if(id==XMKG_DOOR_ID)//0=PRESSED
-			{								
-				MXJ_SendCtrlMessage(DOOR_OUT_ID,3,rx[12],rx[12],rx[12]);			
-			}
-		
-			
-			if(id==XIAOMIMENCI_ID)
-			{
-				if(shefang == 0)
-				{
-					MXJ_SendCtrlMessage(LIGHT_INSIDE_ID,3,rx[12],rx[12],rx[12]);
-					MXJ_SendCtrlMessage(SWITCH_OUTSIDE_ID,3,rx[12],rx[12],rx[12]);
-					flag_light1 = rx[12];
-					flag_light2 = rx[12];
-
-				}
-				else
-				{
-					MXJ_SendCtrlMessage(SWITCH_ALAM_ID,3,2,2,1);						
-				}
-			}
-//================			
-			if(id==XIAOMIKAIGUAN1_ID&&rx[12] == 1)//0=PRESSED
-			{				
-				flag_light21 = ! flag_light21;
-				MXJ_SendCtrlMessage(SWITCH2_ID_1,3,flag_light21,2,2);				
-			}
-			if(id==XIAOMIKAIGUAN2_ID&&rx[12] == 1)//0=PRESSED
-			{				
-				flag_light22 = ! flag_light22;
-				MXJ_SendCtrlMessage(SWITCH2_ID_2,3,flag_light22,2,2);				
-			}
-			if(id==XIAOMIKAIGUAN3_ID&&rx[12] == 1)//0=PRESSED
-			{				
-				flag_light23 = ! flag_light23;
-				MXJ_SendCtrlMessage(SWITCH2_ID_3,3,flag_light23,2,2);				
-			}
-			if(id==XIAOMIKAIGUAN4_ID&&rx[12] == 1)//0=PRESSED
-			{				
-				flag_light24 = ! flag_light24;
-				MXJ_SendCtrlMessage(SWITCH2_ID_4,3,flag_light24,2,2);				
-			}
-			if(id==XIAOMIKAIGUAN5_ID&&rx[12] == 1)//0=PRESSED
-			{				
-				flag_light25 = ! flag_light25;
-				MXJ_SendCtrlMessage(SWITCH2_ID_5,3,flag_light25,2,2);				
-			}
-			if(id==XIAOMIKAIGUAN6_ID&&rx[12] == 1)//0=PRESSED
-			{				
-				flag_light26 = ! flag_light26;
-				MXJ_SendCtrlMessage(SWITCH2_ID_6,3,flag_light26,2,2);				
-			}
-
-			if(id==XIAOMIMENCI1_ID)//0=PRESSED
-			{				
-				MXJ_SendCtrlMessage(SWITCH3_ID_1,3,rx[12],rx[12],rx[12]); 			
-			}
-			if(id==XIAOMIMENCI2_ID)//0=PRESSED
-			{				
-				MXJ_SendCtrlMessage(SWITCH3_ID_2,3,rx[12],rx[12],rx[12]); 			
-			}
-
-////=====================
 		}
 	}
 	else if(cid == 0x406)
@@ -1124,17 +934,20 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		if(len != 13)break;
 		//printf("control up - find id = %d\n",i);
 		//printf("id:%4x\n",id);
-		printf("human detected\n");
-		if(id == XIAOMIRENTI_ID)
-		{			
-			if(humand <= 1)
-			{
-				MXJ_SendCtrlMessage(LIGHT_OUTSIDE_ID,3,1,2,2);
-				humand = 10;
-			}	
-			if(humand > 1 )
-				humand = 10;
-		}
+		//printf("human detected\n");
+		char str[200]={0};
+		char str_url[200]={0};
+		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\"}",id,1,"BodyMove");
+		sprintf(str_url,"127.0.0.1:%d/device/API/command",PORT_CLIENT);
+		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
+		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
+		curl_easy_perform(posturl);	
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+		{
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			  fclose(sp);
+		}		
 	}
 	else if(cid == 0x402)
 	{
@@ -1144,22 +957,22 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		temp = rx[13];
 		temp <<= 8;
 		temp |= rx[12];
-		printf("temperature up - find id = %d\n",i);
+		//printf("temperature up - find id = %d\n",i);
 		//printf("id:%4x\n",id);
-		printf("temperature = %02f\n",(float)temp/100);
-		
-		if(temp > 3600 && temp_flag != 1)
+		//printf("temperature = %02f\n",(float)temp/100);
+		char str[200]={0};
+		char str_url[200]={0};
+		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"type\":\"%s\",\"data\":\"%f\"}",id,1,"Temperature",(float)temp/100);
+		sprintf(str_url,"127.0.0.1:%d/device/API/command",PORT_CLIENT);
+		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
+		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
+		curl_easy_perform(posturl);	
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 		{
-			MXJ_SendCtrlMessage(POWER_ID,1,1,2,2);
-			temp_flag = 1;
-		}
-		if(temp < 3500 && temp_flag != 2)
-		{
-			MXJ_SendCtrlMessage(POWER_ID,1,0,2,2);
-			temp_flag = 2;
-		}
-		
-		
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			  fclose(sp);
+		}		
 
 	}
 	else if(cid == 0x405)
@@ -1169,9 +982,22 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		temp = rx[13];
 		temp <<= 8;
 		temp |= rx[12];
-		printf("humidity up - find id = %d\n",i);
+		//printf("humidity up - find id = %d\n",i);
 		//printf("id:%4x\n",id);
-		printf("humidity = %02f\n",(float)temp/100);
+		//printf("humidity = %02f\n",(float)temp/100);
+		char str[200]={0};
+		char str_url[200]={0};
+		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"type\":\"%s\",\"data\":\"%f\"}",id,1,"Humidity",(float)temp/100);
+		sprintf(str_url,"127.0.0.1:%d/device/API/command",PORT_CLIENT);
+		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
+		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
+		curl_easy_perform(posturl);		
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+		{
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			  fclose(sp);
+		}		
 	}
   	
 	
@@ -1182,43 +1008,75 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 				 uint8_t *temp_str = NULL;
 				/*分配内存空间*/
 				temp_str = (uint8_t*)calloc(rx[12],sizeof(uint8_t));
-				/*将hello写入*/
 				strncpy(temp_str, &rx[13],rx[12]);
-				printf("temp_str = %s\n",temp_str);
+				//printf("temp_str = %s\n",temp_str);
 				if (0 == strcmp (temp_str, "lumi.sensor_switch"))
 				{
-					printf("switch join\n");
-					//char str[200]={0};
-					//sprintf(str,"type=register_request&dev_id=%d&dev_type=11&dev_string=xiaomikaiguan&idxs=1",id);
-					//curl_easy_setopt(geturl, CURLOPT_POSTFIELDS,str);
-					//curl_easy_perform(geturl);
-	
+					//printf("switch join\n");
+					char str[200]={0};
+					char str_url[200]={0};
+					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\"}",id,"MiButton",1);
+					sprintf(str_url,"127.0.0.1:%d/device/API/deviceReg",PORT_CLIENT);
+					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
+					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
+					curl_easy_perform(posturl);	
+					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+					if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+					{
+						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+						  fclose(sp);
+					}					
 				}
 				else if (0 == strcmp (temp_str, "lumi.sensor_magnet"))
 				{
-					printf("magnet join\n");
-					//char str[200]={0};
-					//sprintf(str,"type=register_request&dev_id=%d&dev_type=10&dev_string=xiaomimenci&idxs=1",id);
-					//curl_easy_setopt(geturl, CURLOPT_POSTFIELDS,str);
-	
-					//curl_easy_perform(geturl);			
+					//printf("magnet join\n");
+					char str[200]={0};
+					char str_url[200]={0};
+					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\"}",id,"MagnetSensor",1);
+					sprintf(str_url,"127.0.0.1:%d/device/API/deviceReg",PORT_CLIENT);
+					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
+					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
+					curl_easy_perform(posturl);			
+					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+					if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+					{
+						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+						  fclose(sp);
+					}					
 				}
 				else if (0 == strcmp (temp_str, "lumi.sensor_motion"))
 				{
-					printf("motion join\n");
-					//char str[200]={0};
-					//sprintf(str,"type=register_request&dev_id=%d&dev_type=3&dev_string=xiaomihuman&idxs=1",id);
-					//curl_easy_setopt(geturl, CURLOPT_POSTFIELDS,str);
-	
-					//curl_easy_perform(geturl);			
+					//printf("motion join\n");
+					char str[200]={0};
+					char str_url[200]={0};
+					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\"}",id,"BodySensor",1);
+					sprintf(str_url,"127.0.0.1:%d/device/API/deviceReg",PORT_CLIENT);
+					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
+					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
+					curl_easy_perform(posturl);	
+					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+					if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+					{
+						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+						  fclose(sp);
+					}					
 				}
 				else if (0 == strcmp (temp_str, "lumi.sensor_ht"))
 				{
-					printf("ht join\n");
-					//char str[200]={0};
-					//sprintf(str,"type=register_request&dev_id=%d&dev_type=9&dev_string=xiaomiwenshidu&idxs=1",id);
-					//curl_easy_setopt(geturl, CURLOPT_POSTFIELDS,str);
-					//curl_easy_perform(geturl);			
+					//printf("ht join\n");
+					char str[200]={0};
+					char str_url[200]={0};
+					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\"}",id,"TemperatureSensor",1);
+					sprintf(str_url,"127.0.0.1:%d/device/API/deviceReg",PORT_CLIENT);
+					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
+					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
+					curl_easy_perform(posturl);	
+					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+					if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+					{
+						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+						  fclose(sp);
+					}					
 				}
 			}
 		}
@@ -1344,9 +1202,6 @@ int main(void)
   struct MHD_Daemon *daemon;
   uint8_t i=0;
   
-
-  json_str = (char*)calloc(2000,sizeof(char));
-  
   
 	if(wiringPiSetup() < 0)
 	{
@@ -1384,11 +1239,23 @@ if(pthread_create(&send_usart_pr,NULL,(void *) thread_send,NULL)!=0)
     //printf("server creat failed!\n");
     return 1;
   }
+
+  posturl = curl_easy_init();
+
+	if(posturl){
+
+		curl_easy_setopt(posturl, CURLOPT_URL, "127.0.0.1:10080/api/devices");
+		curl_easy_setopt(posturl, CURLOPT_HTTPPOST, 1L);
+		curl_easy_setopt(posturl, CURLOPT_WRITEFUNCTION, writer);
+		//curl_easy_setopt(posturl, CURLOPT_WRITEDATA, &headerStr);
+	}
+	else
+	   return (1);
+  
    pinMode (24, OUTPUT);
    pinMode (27, OUTPUT);
    pinMode (25, INPUT) ;
-  int tt=0;
-  int j=0,k=0;
+
   //
   //MXJ_GetIdxMessage( 0xe768 );
   //sleep(1);
@@ -1396,32 +1263,13 @@ if(pthread_create(&send_usart_pr,NULL,(void *) thread_send,NULL)!=0)
   //sleep(1);
 
   
-  build_json();
 	static int flag_led = 1;
 	while(1)
 	{  
 		//usleep(500000);
 		sleep(1);
 		
-		if(humand == 1)
-		{
-			MXJ_SendCtrlMessage(LIGHT_OUTSIDE_ID,3,0,2,2);			
-		}
-		if(humand > 0)
-		{	
-			printf("humand = %d\n",humand);
-			humand--;
-		}
-
-		if(carded == 1)
-		{
-			MXJ_SendCtrlMessage(POWER_ID,1,0,0,0);	
-		}
-		if(carded > 0)
-		{	
-			printf("carded = %d\n",carded);
-			carded--;
-		}
+		
 	}
 	
 
