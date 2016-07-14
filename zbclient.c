@@ -597,6 +597,7 @@ void thread_send(void)
 			}
 			
 			printf("USART SEND:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
+
 			for(i=0;i<len;i++)
 			{
 				serialPutchar(usart_fd,txbuf[i]);
@@ -1081,6 +1082,26 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 			}
 		}
 
+		if(cid == 0 && len == 40)
+		{
+			char str[200]={0};
+			char strtemp[200]={0};
+			char str_url[200]={0};
+			int i=0;
+			sprintf(str,"{\"address\":\"%d\"}",id);
+			
+			sprintf(str_url,"127.0.0.1:%d/device/API/feedback/status",PORT_CLIENT);
+			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
+			curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
+			curl_easy_perform(posturl);
+			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+			if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+			{
+				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+				  fclose(sp);
+			}
+		}
+
 
 
 		
@@ -1088,7 +1109,25 @@ void recieve_usart(uint8_t *rx,uint8_t len)
     break;
 
 	case MXJ_XIAOMI1C:
-
+		if(cid == 0 && len == 35)
+		{
+			char str[200]={0};
+			char strtemp[200]={0};
+			char str_url[200]={0};
+			int i=0;
+			sprintf(str,"{\"address\":\"%d\"}",id);
+			
+			sprintf(str_url,"127.0.0.1:%d/device/API/feedback/status",PORT_CLIENT);
+			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
+			curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
+			curl_easy_perform(posturl);
+			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+			if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+			{
+				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+				  fclose(sp);
+			}
+		}
 	break;
 
     
@@ -1255,6 +1294,7 @@ if(pthread_create(&send_usart_pr,NULL,(void *) thread_send,NULL)!=0)
    pinMode (24, OUTPUT);
    pinMode (27, OUTPUT);
    pinMode (25, INPUT) ;
+   pinMode (22, OUTPUT);
 
   //
   //MXJ_GetIdxMessage( 0xe768 );
@@ -1262,13 +1302,19 @@ if(pthread_create(&send_usart_pr,NULL,(void *) thread_send,NULL)!=0)
   //MXJ_GetIdxMessage( 0x968f );
   //sleep(1);
 
-  
+  	digitalWrite(24,HIGH);
+
+  	digitalWrite(22,LOW);
+  	usleep(500000);
 	static int flag_led = 1;
 	while(1)
 	{  
 		//usleep(500000);
-		sleep(1);
 		
+		digitalWrite(22,HIGH);
+		sleep(30);
+		digitalWrite(22,LOW);
+		usleep(500000);
 		
 	}
 	
