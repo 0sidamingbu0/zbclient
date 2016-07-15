@@ -15,7 +15,7 @@ int main(void)
 		digitalWrite(22,LOW);
 		usleep(500000);
 		digitalWrite(22,HIGH);
-		sleep(50);
+		sleep(30);
 	}
 	return 0;
 }
