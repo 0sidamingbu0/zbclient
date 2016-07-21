@@ -119,7 +119,7 @@ typedef unsigned short uint16_t;
 #define FCS_STATE      0x05
 
 #define PORT            8888
-#define PORT_CLIENT     8080
+#define PORT_CLIENT     10080
 
 #define POSTBUFFERSIZE  512
 #define MAXNAMESIZE     3000
@@ -252,8 +252,7 @@ send_page (struct MHD_Connection *connection, const char *page)
   if (!response)
     return MHD_NO;
 
-  //MHD_add_response_header (response, "Content-Type", "text/html;charset=UTF-
-8");
+  //MHD_add_response_header (response, "Content-Type", "text/html;charset=UTF-8");
 
   ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
   MHD_destroy_response (response);
@@ -312,8 +311,7 @@ char *FromUserName;
 
 char *re_body;
   FILE *sp;
-  //printf ("====New %s request for %s using version %s\n", method, url, 
-version);
+  //printf ("====New %s request for %s using version %s\n", method, url, version);
  
   time(&now);
   tblock = localtime(&now);
@@ -353,14 +351,10 @@ version);
 	  if(0 == strcmp (url, "/zbClient/API/permit"))
 		{
 			permitjoin = 1;
-			printf("POST RECIEVE:time: %d-%d-%d %d:%d:%d len=0 url=%s version=%s body=
-NULL\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->
-tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version);
+			printf("POST RECIEVE:time: %d-%d-%d %d:%d:%d len=0 url=%s version=%s body=NULL\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version);
 		 	if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 		    {
-			    fprintf(sp,"POST RECIEVE:time=%d-%d-%d %d:%d:%d len=0 url=%s version=%
-s body=NULL\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, 
-tblock->tm_hour, tblock->tm_min, tblock->tm_sec, url, version);
+			    fprintf(sp,"POST RECIEVE:time=%d-%d-%d %d:%d:%d len=0 url=%s version=%s body=NULL\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec, url, version);
 			    fclose(sp);
 		    }
 		}
@@ -371,10 +365,8 @@ tblock->tm_hour, tblock->tm_min, tblock->tm_sec, url, version);
 
 		
 		
-		const char* length = MHD_lookup_connection_value (connection, 
-MHD_HEADER_KIND, MHD_HTTP_HEADER_CONTENT_LENGTH); 	
-			const char* body = MHD_lookup_connection_value (connection, 
-MHD_POSTDATA_KIND, NULL);		
+		const char* length = MHD_lookup_connection_value (connection, MHD_HEADER_KIND, MHD_HTTP_HEADER_CONTENT_LENGTH); 	
+			const char* body = MHD_lookup_connection_value (connection, MHD_POSTDATA_KIND, NULL);		
 			//printf("length=%s\n",length);
 			//printf("body=%s\n",body);
 			//printf("url=%s\n",url); 
@@ -384,24 +376,19 @@ MHD_POSTDATA_KIND, NULL);
 				//printf("len2=%d\n",len2); 
 				//re_body = (uint8_t*)calloc(len2,sizeof(uint8_t));
 				//strncpy(re_body,body,len2);
-				printf("POST RECIEVE:time=%d-%d-%d %d:%d:%d len=%d url=%s version=%s body
-=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->
-tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version,body);
+				printf("POST RECIEVE:time=%d-%d-%d %d:%d:%d len=%d url=%s version=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version,body);
 			}
 		
 			if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 			{
-				fprintf(sp,"POST RECIEVE:time=%d-%d-%d %d:%d:%d len=%d url=%s version=%s 
-body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->
-tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version,body);
+				fprintf(sp,"POST RECIEVE:time=%d-%d-%d %d:%d:%d len=%d url=%s version=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version,body);
 				fclose(sp);
 			}
 		
 			if(len2 != 0)
 			{
 				json_object *my_object = json_tokener_parse(body);
-				if(json_object_to_json_string(my_object) != NULL && (0 != strcmp (
-json_object_to_json_string(my_object), "null")))
+				if(json_object_to_json_string(my_object) != NULL && (0 != strcmp (json_object_to_json_string(my_object), "null")))
 				{
 					  uint16_t address=0;
 					  uint8_t index=0,resourceSum=0,commandint=255;
@@ -425,8 +412,7 @@ json_object_to_json_string(my_object), "null")))
 					  //printf("index=%d\n", index);
 					  //printf("command=%s\n", command);
 					  //printf("resourceSum=%d\n", resourceSum);
-					  //printf("recieve post json= %s\n", json_object_to_json_string(
-my_object));
+					  //printf("recieve post json= %s\n", json_object_to_json_string(my_object));
 
 					    if(0 == strcmp (url, "/zbClient/API/feedback/register"))
 					  	{
@@ -562,8 +548,7 @@ uint8_t fifo_read(uint8_t **data1,uint8_t *len)
 
 
 
-void send_usart(uint8_t *data,uint8_t len) //id,state1,state2,state3 1=?a,0=1?
-,2=б└бъ3?
+void send_usart(uint8_t *data,uint8_t len) //id,state1,state2,state3 1=?a,0=1?,2=б└бъ3?
 {
   uint8_t txbuf[100];
   uint8_t i=0;
@@ -613,9 +598,7 @@ void thread_send(void)
 			
 			if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 			{
-				fprintf(sp,"USART SEND:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,len);
+				fprintf(sp,"USART SEND:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
 				for(i=0;i<len;i++)
 				  {
 				    fprintf(sp,"%02x ",txbuf[i]);
@@ -624,9 +607,7 @@ tm_min, tblock->tm_sec,len);
 				  fclose(sp);
 			}
 			
-			printf("USART SEND:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->tm_year+
-1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, 
-tblock->tm_sec,len);
+			printf("USART SEND:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
 
 			for(i=0;i<len;i++)
 			{
@@ -680,11 +661,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
   time(&now);
   tblock = localtime(&now);
   //printf("\n");
-  //printf("recieved:%d - at: %d-%d-%d %d:%d:%d\n",len,tblock->tm_year, tblock
-->tm_mon, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec);
-  printf("USART RECIEVE:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->tm_year+
-1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, 
-tblock->tm_sec,len);
+  //printf("recieved:%d - at: %d-%d-%d %d:%d:%d\n",len,tblock->tm_year, tblock->tm_mon, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec);
+  printf("USART RECIEVE:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
   for(i=0;i<len;i++)
 	  printf("%02x ",rx[i]);
   printf("\n");
@@ -694,9 +672,7 @@ tblock->tm_sec,len);
   FILE *sp;
   if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 	{
-		fprintf(sp,"USART RECIEVE:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,len);
+		fprintf(sp,"USART RECIEVE:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
 		for(i=0;i<len;i++)
     		fprintf(sp,"%02x ",rx[i]);
 		fprintf(sp,"\n");
@@ -739,21 +715,16 @@ tm_min, tblock->tm_sec,len);
 		}
 		char str[200]={0};
 		char str_url[200]={0};
-		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\"}",
-id,rx[8],event);
+		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"linkQuality\":\"%d\"}",id,rx[8],event,rx[len-1]);
 		sprintf(str_url,"10.28.1.28:%d/device/API/command",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);	
 		
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+
-1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, 
-tblock->tm_sec,str_url,str);
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}
 						
@@ -786,20 +757,15 @@ tm_min, tblock->tm_sec,str_url,str);
   		}
 		char str[200]={0};
 		char str_url[200]={0};
-		sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d
-\",\"linkQuality\":\"%d\"}",id,deviceType,rx[8],rx[9]);
+		sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\"}",id,deviceType,rx[8],rx[len-1]);
 		sprintf(str_url,"10.28.1.28:%d/device/API/deviceReg",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+
-1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, 
-tblock->tm_sec,str_url,str);
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}
 		
@@ -814,8 +780,7 @@ tm_min, tblock->tm_sec,str_url,str);
 		char strtemp[200]={0};
 		char str_url[200]={0};
 		int i=0;
-		sprintf(str,"{\"address\":\"%d\",\"linkQuality\":\"%d\",\"status\":[",id,rx[
-len-1]);
+		sprintf(str,"{\"address\":\"%d\",\"linkQuality\":\"%d\",\"status\":[",id,rx[len-1]);
 		for(i=0;i<rx[7];i++)
 		{
 			sprintf(strtemp,"{\"value\":\"%d\"}",rx[8+i]);
@@ -831,14 +796,10 @@ len-1]);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+
-1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, 
-tblock->tm_sec,str_url,str);
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}	
 	break;
@@ -865,21 +826,16 @@ tm_min, tblock->tm_sec,str_url,str);
 		}
 		char str[200]={0};
 		char str_url[200]={0};
-		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"data\":\"%d\",\"
-type\":\"%s\",\"linkQuality\":\"%d\"}",id,rx[8],tempdata,type,rx[len-1]);
+		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"data\":\"%d\",\"type\":\"%s\",\"linkQuality\":\"%d\"}",id,rx[8],tempdata,type,rx[len-1]);
 		sprintf(str_url,"10.28.1.28:%d/device/API/command",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);	
 		
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+
-1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, 
-tblock->tm_sec,str_url,str);
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}
 						
@@ -896,14 +852,10 @@ tm_min, tblock->tm_sec,str_url,str);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+
-1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, 
-tblock->tm_sec,str_url,str);
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}    
     break;
@@ -913,20 +865,15 @@ tm_min, tblock->tm_sec,str_url,str);
 	{
 		char str[200]={0};
 		char str_url[200]={0};
-		sprintf(str,"{\"address\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x
-:%02x:%02x\"}",id,rx[11],rx[10],rx[9],rx[8],rx[7],rx[6],rx[5],rx[4]);
+		sprintf(str,"{\"address\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,rx[11],rx[10],rx[9],rx[8],rx[7],rx[6],rx[5],rx[4]);
 		sprintf(str_url,"10.28.1.28:%d/device/API/report",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+
-1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, 
-tblock->tm_sec,str_url,str);
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}
 
@@ -942,14 +889,10 @@ tm_min, tblock->tm_sec,str_url,str);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+
-1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, 
-tblock->tm_sec,str_url,str);
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}		
     break;
@@ -960,7 +903,7 @@ tm_min, tblock->tm_sec,str_url,str);
 
 	if(cid == 6)
 	{
-		if(len != 13+1)break;
+		if(len != 13 + 1)break;
 		//printf("control up - find id = %d\n",i);
 		//printf("id:%4x\n",id);
 		if(rx[11] == 0x20)
@@ -968,20 +911,15 @@ tm_min, tblock->tm_sec,str_url,str);
 			//printf("double kick\n");
 			char str[200]={0};
 			char str_url[200]={0};
-			sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",
-\"linkQuality\":\"%d\"}",id,1,"DoubleClick",rx[len-1]);
+			sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"linkQuality\":\"%d\"}",id,1,"DoubleClick",rx[len-1]);
 			sprintf(str_url,"10.28.1.28:%d/device/API/command",PORT_CLIENT);
 			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 			curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 			curl_easy_perform(posturl);	
-			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year
-+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, 
-tblock->tm_sec,str_url,str);
+			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 			if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 			{
-				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);			
+				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 				  fclose(sp);
 			}			
 		}
@@ -1003,20 +941,15 @@ tm_min, tblock->tm_sec,str_url,str);
 			}
 			char str[200]={0};
 			char str_url[200]={0};
-			sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",
-\"linkQuality\":\"%d\"}",id,1,event,rx[len-1]);
+			sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"linkQuality\":\"%d\"}",id,1,event,rx[len-1]);
 			sprintf(str_url,"10.28.1.28:%d/device/API/command",PORT_CLIENT);
 			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 			curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 			curl_easy_perform(posturl); 
-			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year
-+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, 
-tblock->tm_sec,str_url,str);
+			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 			if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 			{
-				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);			
+				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 				  fclose(sp);
 			}
 
@@ -1024,33 +957,28 @@ tm_min, tblock->tm_sec,str_url,str);
 	}
 	else if(cid == 0x406)
 	{
-		if(len != 13+1)break;
+		if(len != 13 + 1)break;
 		//printf("control up - find id = %d\n",i);
 		//printf("id:%4x\n",id);
 		//printf("human detected\n");
 		char str[200]={0};
 		char str_url[200]={0};
-		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"
-linkQuality\":\"%d\"}",id,1,"BodyMove",rx[len-1]);
+		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"linkQuality\":\"%d\"}",id,1,"BodyMove",rx[len-1]);
 		sprintf(str_url,"10.28.1.28:%d/device/API/command",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);	
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+
-1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, 
-tblock->tm_sec,str_url,str);
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}		
 	}
 	else if(cid == 0x402)
 	{
 		int16_t temp = 0;
-		if(len != 14+1)break;
+		if(len != 14 + 1)break;
 		static uint8_t temp_flag = 0;
 		temp = rx[13];
 		temp <<= 8;
@@ -1060,21 +988,15 @@ tm_min, tblock->tm_sec,str_url,str);
 		//printf("temperature = %02f\n",(float)temp/100);
 		char str[200]={0};
 		char str_url[200]={0};
-		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"type\":\"%s\",\"
-data\":\"%f\",\"linkQuality\":\"%d\"}",id,1,"Temperature",(float)temp/100,rx[
-len-1]);
+		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"type\":\"%s\",\"data\":\"%f\",\"linkQuality\":\"%d\"}",id,1,"Temperature",(float)temp/100,rx[len-1]);
 		sprintf(str_url,"10.28.1.28:%d/device/API/value",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);	
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+
-1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, 
-tblock->tm_sec,str_url,str);
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}		
 
@@ -1082,7 +1004,7 @@ tm_min, tblock->tm_sec,str_url,str);
 	else if(cid == 0x405)
 	{
 	 	uint16_t temp = 0;
-		if(len != 14+1)break;
+		if(len != 14 + 1)break;
 		temp = rx[13];
 		temp <<= 8;
 		temp |= rx[12];
@@ -1091,27 +1013,21 @@ tm_min, tblock->tm_sec,str_url,str);
 		//printf("humidity = %02f\n",(float)temp/100);
 		char str[200]={0};
 		char str_url[200]={0};
-		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"type\":\"%s\",\"
-data\":\"%f\",\"linkQuality\":\"%d\"}",id,1,"Humidity",(float)temp/100,rx[len-
-1]);
+		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"type\":\"%s\",\"data\":\"%f\",\"linkQuality\":\"%d\"}",id,1,"Humidity",(float)temp/100,rx[len-1]);
 		sprintf(str_url,"10.28.1.28:%d/device/API/value",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);		
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+
-1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, 
-tblock->tm_sec,str_url,str);
+		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}		
 	}
   	
 	
-	if(len>=27 && len < 32)
+	if(len>=27 && len < 32 + 1)
 		{
 			if(cid == 0 && rx[12] <= len - 13)
 			{
@@ -1125,20 +1041,15 @@ tm_min, tblock->tm_sec,str_url,str);
 					//printf("switch join\n");
 					char str[200]={0};
 					char str_url[200]={0};
-					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum
-\":\"%d\",\"linkQuality\":\"%d\"}",id,"MiButton",1,rx[len-1]);
+					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\"}",id,"MiButton",1,rx[len-1]);
 					sprintf(str_url,"10.28.1.28:%d/device/API/deviceReg",PORT_CLIENT);
 					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 					curl_easy_perform(posturl);	
-					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);
+					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 					if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 					{
-						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);			
+						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 						  fclose(sp);
 					}					
 				}
@@ -1147,20 +1058,15 @@ tm_min, tblock->tm_sec,str_url,str);
 					//printf("magnet join\n");
 					char str[200]={0};
 					char str_url[200]={0};
-					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum
-\":\"%d\",\"linkQuality\":\"%d\"}",id,"MagnetSensor",1,rx[len-1]);
+					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\"}",id,"MagnetSensor",1,rx[len-1]);
 					sprintf(str_url,"10.28.1.28:%d/device/API/deviceReg",PORT_CLIENT);
 					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 					curl_easy_perform(posturl);			
-					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);
+					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 					if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 					{
-						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);			
+						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 						  fclose(sp);
 					}					
 				}
@@ -1169,20 +1075,15 @@ tm_min, tblock->tm_sec,str_url,str);
 					//printf("motion join\n");
 					char str[200]={0};
 					char str_url[200]={0};
-					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum
-\":\"%d\",\"linkQuality\":\"%d\"}",id,"BodySensor",1,rx[len-1]);
+					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\"}",id,"BodySensor",1,rx[len-1]);
 					sprintf(str_url,"10.28.1.28:%d/device/API/deviceReg",PORT_CLIENT);
 					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 					curl_easy_perform(posturl);	
-					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);
+					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 					if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 					{
-						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);			
+						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 						  fclose(sp);
 					}					
 				}
@@ -1191,27 +1092,22 @@ tm_min, tblock->tm_sec,str_url,str);
 					//printf("ht join\n");
 					char str[200]={0};
 					char str_url[200]={0};
-					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum
-\":\"%d\",\"linkQuality\":\"%d\"}",id,"TemperatureSensor",1,rx[len-1]);
+					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\"}",id,"TemperatureSensor",1,rx[len-1]);
 					sprintf(str_url,"10.28.1.28:%d/device/API/deviceReg",PORT_CLIENT);
 					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 					curl_easy_perform(posturl);	
-					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);
+					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 					if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 					{
-						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);			
+						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 						  fclose(sp);
 					}					
 				}
 			}
 		}
 
-		if(cid == 0 && len == 40+1)
+		if(cid == 0 && len == 40 + 1)
 		{
 			char str[200]={0};
 			char strtemp[200]={0};
@@ -1223,14 +1119,10 @@ tm_min, tblock->tm_sec,str_url,str);
 			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 			curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 			curl_easy_perform(posturl);
-			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year
-+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, 
-tblock->tm_sec,str_url,str);
+			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 			if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 			{
-				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);			
+				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 				  fclose(sp);
 			}
 		}
@@ -1242,7 +1134,7 @@ tm_min, tblock->tm_sec,str_url,str);
     break;
 
 	case MXJ_XIAOMI1C:
-		if(cid == 0 && len == 35+1)
+		if(cid == 0 && len == 35 + 1)
 		{
 			char str[200]={0};
 			char strtemp[200]={0};
@@ -1254,14 +1146,10 @@ tm_min, tblock->tm_sec,str_url,str);
 			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 			curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 			curl_easy_perform(posturl);
-			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year
-+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, 
-tblock->tm_sec,str_url,str);
+			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 			if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
 			{
-				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->
-tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->
-tm_min, tblock->tm_sec,str_url,str);			
+				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 				  fclose(sp);
 			}
 		}
@@ -1317,8 +1205,7 @@ void thread(void)
         // Fill in the buffer the first byte of the data 
         rxbuf[2 + tempDataLen++] = ch;
 
-        // If number of bytes read is equal to data length, time to move on 
-to FCS 
+        // If number of bytes read is equal to data length, time to move on to FCS 
         if ( tempDataLen == LEN_Token - 1 )
             state = FCS_STATE;
 
@@ -1474,8 +1361,7 @@ if(pthread_create(&send_usart_pr,NULL,(void *) thread_send,NULL)!=0)
  *
  * @return  none
  */
-void MXJ_SendCtrlMessage( uint16_t id ,uint8_t len,uint8_t msg1 , uint8_t 
-msg2 , uint8_t msg3 )
+void MXJ_SendCtrlMessage( uint16_t id ,uint8_t len,uint8_t msg1 , uint8_t msg2 , uint8_t msg3 )
 {
 //  uint8_t data[5]={MXJ_CTRL_DOWN,3,msg1,msg2,msg3};//ии?a????1бы??бу??
   uint8_t data[7]={0,len+3,(uint8_t)(id>>8),(uint8_t)id,msg1,msg2,msg3};
@@ -1493,8 +1379,7 @@ msg2 , uint8_t msg3 )
  
       //uint8_t data[7]={0,6,0x17,0x1f,1,1,1};//?????и╣ив??y
      //uint8_t data[4]={10,3,0x17,0x1f};//?a1????????t??ии??y
-     //uint8_t data[12]={8,11,0x17,0x1f,0,0,0x7b,0x4f,1,2,2,1};//?a1????????t
-ижии???y    
+     //uint8_t data[12]={8,11,0x17,0x1f,0,0,0x7b,0x4f,1,2,2,1};//?a1????????tижии???y    
      //send_usart(data,12);
  */
 void MXJ_SendRegisterMessage( uint16_t id, uint8_t state )
