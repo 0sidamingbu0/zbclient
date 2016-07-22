@@ -847,7 +847,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	{
 		char str[200]={0};
 		char str_url[200]={0};
-		sprintf(str,"{\"address\":\"%d\"}",id);
+		sprintf(str,"{\"address\":\"%d\",\"linkQuality\":\"%d\"}",id,rx[len-1]);
 		sprintf(str_url,"10.28.1.28:%d/device/API/feedback/ping",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
