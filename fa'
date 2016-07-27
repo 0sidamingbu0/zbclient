@@ -1,0 +1,71 @@
+[33mcommit 28f1f8816dbbcc55b954632ef1d6a392ba015235[m
+Author: wwy <wu.wangyang@mydreamplus.com>
+Date:   Fri Jul 22 10:06:37 2016 +0800
+
+    add linkQuality for ping response
+
+[33mcommit b194a844b370a1460e37f53c9ca15c0963039929[m
+Author: wwy <wu.wangyang@mydreamplus.com>
+Date:   Thu Jul 21 17:22:38 2016 +0800
+
+    add linkquality and fix command to value for temp and hum ok
+
+[33mcommit 463e318bc6f87d2571451f2b26eb51f8b1f5f73a[m
+Author: wwy <wu.wangyang@mydreamplus.com>
+Date:   Thu Jul 21 17:02:05 2016 +0800
+
+    add linkquality and fix command to value for temp and hum
+
+[33mcommit 2c8e29726651bdec2081e6f9e8569887023c21ad[m
+Author: wuwangyang <wu.wangyang@mydreamplus.com>
+Date:   Mon Jul 18 16:06:00 2016 +0800
+
+    add permit API
+
+[33mcommit f726855a27ca237186f2544259ce5c62f73cfde9[m
+Author: wuwangyang <wu.wangyang@mydreamplus.com>
+Date:   Fri Jul 15 09:58:05 2016 +0800
+
+    join 50s -> 30s
+
+[33mcommit 64adc516d9ecdceda42b48527a3b0d8b74c64557[m
+Author: wuwangyang <wu.wangyang@mydreamplus.com>
+Date:   Fri Jul 15 09:55:53 2016 +0800
+
+    add join
+
+[33mcommit 034752c4fcd5de30f8d922b3bc62067d68a7205c[m
+Author: wuwangyang <wu.wangyang@mydreamplus.com>
+Date:   Thu Jul 14 14:21:03 2016 +0800
+
+    bug fix
+
+[33mcommit 5c1b0e9a7d3112ec8ada4a77b82a81c3e4eeceae[m
+Author: wuwangyang <wu.wangyang@mydreamplus.com>
+Date:   Wed Jul 13 15:34:06 2016 +0800
+
+    add post send and recieve test ok
+
+[33mcommit d57731e8b9a5545a449257b681be8f61460eaacf[m
+Author: wuwangyang <wu.wangyang@mydreamplus.com>
+Date:   Tue Jul 12 16:21:37 2016 +0800
+
+    update log output and printf
+
+[33mcommit e80ebc6c8862244af0c3cceb14e93d535e3cc5e4[m
+Author: wuwangyang <wu.wangyang@mydreamplus.com>
+Date:   Tue Jul 12 13:55:51 2016 +0800
+
+    add makefile
+
+[33mcommit 83b113d0fbbfd79ec3c8e8e6e267dbc5332d036f[m
+Author: wuwangyang <wu.wangyang@mydreamplus.com>
+Date:   Tue Jul 12 12:42:45 2016 +0800
+
+    jianhua zbclient.c
+
+[33mcommit 1a01b60f2dccbc53f638888a427324d7ed604870[m
+Author: wuwangyang <wu.wangyang@mydreamplus.com>
+Date:   Tue Jul 12 12:27:46 2016 +0800
+
+    http re all body test ok

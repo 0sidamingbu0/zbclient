@@ -39,6 +39,8 @@ sudo find / -name libmicrohttpd*
 #include <time.h>
 #include <stddef.h>
 #include <curl.h>
+#include <fcntl.h>
+#include <termios.h>
 
 
 #define XMKG_M_ID     		0X2d81 //a
@@ -180,6 +182,8 @@ uint8_t  tempDataLen = 0;
 uint8_t rxbuf[200];
 uint8_t len_global=0;
 int led_state = 0;
+struct termios stNew;
+struct termios stOld;
 
 
 time_t now;
@@ -196,6 +200,7 @@ void MXJ_SendCtrlMessage( uint16_t ,uint8_t len, uint8_t , uint8_t , uint8_t );
 void MXJ_SendStateMessage( uint16_t );
 
 void MXJ_GetStateMessage( uint16_t id );
+int SerialInit(void);
 
 
 typedef struct
@@ -609,9 +614,13 @@ void thread_send(void)
 			
 			printf("USART SEND:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
 
+			write(usart_fd, txbuf, len);
+
+			
 			for(i=0;i<len;i++)
 			{
-				serialPutchar(usart_fd,txbuf[i]);
+				//serialPutchar(usart_fd,txbuf[i]);
+				
 				printf("%02x ",txbuf[i]);
 			}
 			printf("\n");
@@ -1168,8 +1177,12 @@ void thread(void)
   
 	while (1)
 	{		
-		ch = serialGetchar(usart_fd);
-   //printf("recieve ch=%02x\n",ch);
+		if(read(usart_fd,&ch,1) == -1)
+		{
+			printf("usart read error\n");
+			continue;
+		}
+   		//printf("recieve ch=%02x\n",ch);
 		 switch (state)
     {
       case WW_STATE:
@@ -1258,6 +1271,50 @@ void thread(void)
 	}
 
 }
+int SerialInit(void)
+{
+	int temp_fd=-1;
+    temp_fd = open("/dev/ttyAMA0", O_RDWR|O_NOCTTY|O_NDELAY);
+    if(-1 == temp_fd)
+    {
+        printf("Open Serial Port Error!\n");
+        return -1;
+    }
+    if( (fcntl(temp_fd, F_SETFL, 0)) < 0 )
+    {
+        printf("Fcntl F_SETFL Error!\n");
+        return -1;
+    }
+    if(tcgetattr(temp_fd, &stOld) != 0)
+    {
+        printf("tcgetattr error!\n");
+        return -1;
+    }
+    stNew = stOld;
+    cfmakeraw(&stNew);//将终端设置为原始模式，该模式下所有的输入数据以字节为单位被处理
+    //set speed
+    cfsetispeed(&stNew, 115200);//115200
+    //cfsetospeed(&stNew, BAUDRATE);
+    //set databits
+    stNew.c_cflag |= (CLOCAL|CREAD);
+    stNew.c_cflag &= ~CSIZE;
+    stNew.c_cflag |= CS8;
+    //set parity
+    stNew.c_cflag &= ~PARENB;
+    stNew.c_iflag &= ~INPCK;
+    //set stopbits
+    stNew.c_cflag &= ~CSTOPB;
+    stNew.c_cc[VTIME]=0;    //指定所要读取字符的最小数量
+    stNew.c_cc[VMIN]=1; //指定读取第一个字符的等待时间，时间的单位为n*100ms
+                //如果设置VTIME=0，则无字符输入时read（）操作无限期的阻塞
+    tcflush(temp_fd,TCIFLUSH);  //清空终端未完成的输入/输出请求及数据。
+    if( tcsetattr(temp_fd,TCSANOW,&stNew) != 0 )
+    {
+        perror("tcsetattr Error!\n");
+        return -1;
+    }
+    return temp_fd;
+}
 
 int main(void)
 {
@@ -1272,13 +1329,22 @@ int main(void)
 		printf("wiringpi setup failed!\n");
 		return 1;
 	}
-	if((usart_fd = serialOpen("/dev/ttyAMA0",115200)) < 0)
+
+	if((usart_fd = SerialInit()) ==-1)
 	{
 		printf("serial open failed!\n");
 		return 1;
 	}
 	printf("serial test start ...\n");
 
+	/*
+	if((usart_fd = serialOpen("/dev/ttyAMA0",115200)) < 0)
+	{
+		printf("serial open failed!\n");
+		return 1;
+	}
+	printf("serial test start ...\n");
+*/
 	//ret=pthread_create(&id,NULL,(void *) thread,NULL);
 	if(pthread_create(&id,NULL,(void *) thread,NULL)!=0)
 	{
@@ -1348,7 +1414,7 @@ if(pthread_create(&send_usart_pr,NULL,(void *) thread_send,NULL)!=0)
 	}
 	
 
-	serialClose(usart_fd);
+	//serialClose(usart_fd);
 	return (0);
 }
 
