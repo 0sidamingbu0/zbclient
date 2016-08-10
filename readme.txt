@@ -24,13 +24,18 @@ sudo make install
 sudo cp /usr/local/lib/libmicrohttp.* /lib/arm-linux-gnueabihf/
 regcc .c
 ok
-
-=====
-sudo rm /usr/arm-linux-gnueabihf/libmicrohttpd.so
-sudo cp libmicrohttpd.so.12.37.0 /usr/arm-linux-gnueabihf/
-sudo ln -s libmicrohttpd.so.12.37.0 libmicrohttpd.so.12
-sudo ln -s libmicrohttpd.so.12 libmicrohttpd.so
-
 ----
 ls -l |grep libmicrohttpd
 sudo find / -name libmicrohttpd*
+=====
+cd zbclient
+sudo rm /etc/supervisor/conf.d/*
+sudo cp zbclient.conf /etc/supervisior/conf.d/
+sudo rm /usr/lib/arm-linux-gnueabihf/libmicrohttpd.so
+sudo cp libmicrohttpd.so.12.37.0 /usr/lib/arm-linux-gnueabihf/
+sudo ln -s /usr/lib/arm-linux-gnueabihf/libmicrohttpd.so.12.37.0 /usr/lib/arm-linux-gnueabihf/libmicrohttpd.so.12
+sudo ln -s /usr/lib/arm-linux-gnueabihf/libmicrohttpd.so.12 /usr/lib/arm-linux-gnueabihf/libmicrohttpd.so
+chmod 777 join reset zbclient
+
+PI3:
+

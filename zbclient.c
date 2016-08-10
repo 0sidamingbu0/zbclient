@@ -39,8 +39,6 @@ sudo find / -name libmicrohttpd*
 #include <time.h>
 #include <stddef.h>
 #include <curl.h>
-#include <fcntl.h>
-#include <termios.h>
 
 
 #define XMKG_M_ID     		0X2d81 //a
@@ -182,8 +180,6 @@ uint8_t  tempDataLen = 0;
 uint8_t rxbuf[200];
 uint8_t len_global=0;
 int led_state = 0;
-struct termios stNew;
-struct termios stOld;
 
 
 time_t now;
@@ -200,7 +196,6 @@ void MXJ_SendCtrlMessage( uint16_t ,uint8_t len, uint8_t , uint8_t , uint8_t );
 void MXJ_SendStateMessage( uint16_t );
 
 void MXJ_GetStateMessage( uint16_t id );
-int SerialInit(void);
 
 
 typedef struct
@@ -357,7 +352,7 @@ char *re_body;
 		{
 			permitjoin = 1;
 			printf("POST RECIEVE:time: %d-%d-%d %d:%d:%d len=0 url=%s version=%s body=NULL\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version);
-		 	if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+		 	if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		    {
 			    fprintf(sp,"POST RECIEVE:time=%d-%d-%d %d:%d:%d len=0 url=%s version=%s body=NULL\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec, url, version);
 			    fclose(sp);
@@ -384,7 +379,7 @@ char *re_body;
 				printf("POST RECIEVE:time=%d-%d-%d %d:%d:%d len=%d url=%s version=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version,body);
 			}
 		
-			if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+			if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 			{
 				fprintf(sp,"POST RECIEVE:time=%d-%d-%d %d:%d:%d len=%d url=%s version=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version,body);
 				fclose(sp);
@@ -601,7 +596,7 @@ void thread_send(void)
 			time(&now);
 			tblock = localtime(&now);
 			
-			if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+			if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 			{
 				fprintf(sp,"USART SEND:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
 				for(i=0;i<len;i++)
@@ -614,13 +609,9 @@ void thread_send(void)
 			
 			printf("USART SEND:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
 
-			write(usart_fd, txbuf, len);
-
-			
 			for(i=0;i<len;i++)
 			{
-				//serialPutchar(usart_fd,txbuf[i]);
-				
+				serialPutchar(usart_fd,txbuf[i]);
 				printf("%02x ",txbuf[i]);
 			}
 			printf("\n");
@@ -679,7 +670,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 
   
   FILE *sp;
-  if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+  if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 	{
 		fprintf(sp,"USART RECIEVE:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
 		for(i=0;i<len;i++)
@@ -720,18 +711,20 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 			case 5: event = "ReportData";break;
 			case 6: event = "LongPress";break;
 			case 7: event = "TriggerByCloud";break;	
+			case 8: event = "ReportCardId";break;
+			case 9: event = "ReportPassword";break;	
 			default : event = "Unknow event";
 		}
 		char str[200]={0};
 		char str_url[200]={0};
 		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"linkQuality\":\"%d\"}",id,rx[8],event,rx[len-1]);
-		sprintf(str_url,"10.28.1.28:%d/device/API/command",PORT_CLIENT);
+		sprintf(str_url,"127.0.0.1:%d/device/API/command",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);	
 		
 		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
-		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
 			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
@@ -767,12 +760,12 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		char str[200]={0};
 		char str_url[200]={0};
 		sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\"}",id,deviceType,rx[8],rx[len-1]);
-		sprintf(str_url,"10.28.1.28:%d/device/API/deviceReg",PORT_CLIENT);
+		sprintf(str_url,"127.0.0.1:%d/device/API/deviceReg",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);
 		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
-		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
 			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
@@ -801,12 +794,12 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		}
 		strcat (str,"]}");
 		
-		sprintf(str_url,"10.28.1.28:%d/device/API/feedback/status",PORT_CLIENT);
+		sprintf(str_url,"127.0.0.1:%d/device/API/feedback/status",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);
 		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
-		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
 			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
@@ -836,13 +829,13 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		char str[200]={0};
 		char str_url[200]={0};
 		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"data\":\"%d\",\"type\":\"%s\",\"linkQuality\":\"%d\"}",id,rx[8],tempdata,type,rx[len-1]);
-		sprintf(str_url,"10.28.1.28:%d/device/API/command",PORT_CLIENT);
+		sprintf(str_url,"127.0.0.1:%d/device/API/command",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);	
 		
 		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
-		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
 			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
@@ -857,12 +850,12 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		char str[200]={0};
 		char str_url[200]={0};
 		sprintf(str,"{\"address\":\"%d\",\"linkQuality\":\"%d\"}",id,rx[len-1]);
-		sprintf(str_url,"10.28.1.28:%d/device/API/feedback/ping",PORT_CLIENT);
+		sprintf(str_url,"127.0.0.1:%d/device/API/feedback/ping",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);
 		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
-		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
 			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
@@ -875,12 +868,12 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		char str[200]={0};
 		char str_url[200]={0};
 		sprintf(str,"{\"address\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,rx[11],rx[10],rx[9],rx[8],rx[7],rx[6],rx[5],rx[4]);
-		sprintf(str_url,"10.28.1.28:%d/device/API/report",PORT_CLIENT);
+		sprintf(str_url,"127.0.0.1:%d/device/API/report",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);
 		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
-		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
 			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
@@ -894,12 +887,12 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		char str[200]={0};
 		char str_url[200]={0};
 		sprintf(str,"{\"address\":\"%d\"}",id);
-		sprintf(str_url,"10.28.1.28:%d/device/API/rest",PORT_CLIENT);
+		sprintf(str_url,"127.0.0.1:%d/device/API/rest",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);
 		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
-		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
 			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
@@ -921,12 +914,12 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 			char str[200]={0};
 			char str_url[200]={0};
 			sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"linkQuality\":\"%d\"}",id,1,"DoubleClick",rx[len-1]);
-			sprintf(str_url,"10.28.1.28:%d/device/API/command",PORT_CLIENT);
+			sprintf(str_url,"127.0.0.1:%d/device/API/command",PORT_CLIENT);
 			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 			curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 			curl_easy_perform(posturl);	
 			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
-			if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+			if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 			{
 				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 				  fclose(sp);
@@ -951,12 +944,12 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 			char str[200]={0};
 			char str_url[200]={0};
 			sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"linkQuality\":\"%d\"}",id,1,event,rx[len-1]);
-			sprintf(str_url,"10.28.1.28:%d/device/API/command",PORT_CLIENT);
+			sprintf(str_url,"127.0.0.1:%d/device/API/command",PORT_CLIENT);
 			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 			curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 			curl_easy_perform(posturl); 
 			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
-			if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+			if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 			{
 				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 				  fclose(sp);
@@ -973,12 +966,12 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		char str[200]={0};
 		char str_url[200]={0};
 		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"linkQuality\":\"%d\"}",id,1,"BodyMove",rx[len-1]);
-		sprintf(str_url,"10.28.1.28:%d/device/API/command",PORT_CLIENT);
+		sprintf(str_url,"127.0.0.1:%d/device/API/command",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);	
 		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
-		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
 			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
@@ -998,12 +991,12 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		char str[200]={0};
 		char str_url[200]={0};
 		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"type\":\"%s\",\"data\":\"%f\",\"linkQuality\":\"%d\"}",id,1,"Temperature",(float)temp/100,rx[len-1]);
-		sprintf(str_url,"10.28.1.28:%d/device/API/value",PORT_CLIENT);
+		sprintf(str_url,"127.0.0.1:%d/device/API/value",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);	
 		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
-		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
 			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
@@ -1023,12 +1016,12 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		char str[200]={0};
 		char str_url[200]={0};
 		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"type\":\"%s\",\"data\":\"%f\",\"linkQuality\":\"%d\"}",id,1,"Humidity",(float)temp/100,rx[len-1]);
-		sprintf(str_url,"10.28.1.28:%d/device/API/value",PORT_CLIENT);
+		sprintf(str_url,"127.0.0.1:%d/device/API/value",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);		
 		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
-		if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
 			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
@@ -1051,12 +1044,12 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 					char str[200]={0};
 					char str_url[200]={0};
 					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\"}",id,"MiButton",1,rx[len-1]);
-					sprintf(str_url,"10.28.1.28:%d/device/API/deviceReg",PORT_CLIENT);
+					sprintf(str_url,"127.0.0.1:%d/device/API/deviceReg",PORT_CLIENT);
 					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 					curl_easy_perform(posturl);	
 					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
-					if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+					if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 					{
 						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 						  fclose(sp);
@@ -1068,12 +1061,12 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 					char str[200]={0};
 					char str_url[200]={0};
 					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\"}",id,"MagnetSensor",1,rx[len-1]);
-					sprintf(str_url,"10.28.1.28:%d/device/API/deviceReg",PORT_CLIENT);
+					sprintf(str_url,"127.0.0.1:%d/device/API/deviceReg",PORT_CLIENT);
 					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 					curl_easy_perform(posturl);			
 					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
-					if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+					if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 					{
 						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 						  fclose(sp);
@@ -1085,12 +1078,12 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 					char str[200]={0};
 					char str_url[200]={0};
 					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\"}",id,"BodySensor",1,rx[len-1]);
-					sprintf(str_url,"10.28.1.28:%d/device/API/deviceReg",PORT_CLIENT);
+					sprintf(str_url,"127.0.0.1:%d/device/API/deviceReg",PORT_CLIENT);
 					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 					curl_easy_perform(posturl);	
 					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
-					if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+					if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 					{
 						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 						  fclose(sp);
@@ -1102,12 +1095,12 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 					char str[200]={0};
 					char str_url[200]={0};
 					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\"}",id,"TemperatureSensor",1,rx[len-1]);
-					sprintf(str_url,"10.28.1.28:%d/device/API/deviceReg",PORT_CLIENT);
+					sprintf(str_url,"127.0.0.1:%d/device/API/deviceReg",PORT_CLIENT);
 					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 					curl_easy_perform(posturl);	
 					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
-					if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+					if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 					{
 						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 						  fclose(sp);
@@ -1124,12 +1117,12 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 			int i=0;
 			sprintf(str,"{\"address\":\"%d\",\"linkQuality\":\"%d\"}",id,rx[len-1]);
 			
-			sprintf(str_url,"10.28.1.28:%d/device/API/feedback/status",PORT_CLIENT);
+			sprintf(str_url,"127.0.0.1:%d/device/API/feedback/status",PORT_CLIENT);
 			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 			curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 			curl_easy_perform(posturl);
 			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
-			if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+			if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 			{
 				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 				  fclose(sp);
@@ -1151,12 +1144,12 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 			int i=0;
 			sprintf(str,"{\"address\":\"%d\",\"linkQuality\":\"%d\"}",id,rx[len-1]);
 			
-			sprintf(str_url,"10.28.1.28:%d/device/API/feedback/status",PORT_CLIENT);
+			sprintf(str_url,"127.0.0.1:%d/device/API/feedback/status",PORT_CLIENT);
 			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 			curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 			curl_easy_perform(posturl);
 			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
-			if ((sp = fopen("/home/pi/zbclient/log.txt","a+")) != NULL)
+			if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 			{
 				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 				  fclose(sp);
@@ -1177,12 +1170,8 @@ void thread(void)
   
 	while (1)
 	{		
-		if(read(usart_fd,&ch,1) == -1)
-		{
-			printf("usart read error\n");
-			continue;
-		}
-   		//printf("recieve ch=%02x\n",ch);
+		ch = serialGetchar(usart_fd);
+   //printf("recieve ch=%02x\n",ch);
 		 switch (state)
     {
       case WW_STATE:
@@ -1271,50 +1260,6 @@ void thread(void)
 	}
 
 }
-int SerialInit(void)
-{
-	int temp_fd=-1;
-    temp_fd = open("/dev/ttyAMA0", O_RDWR|O_NOCTTY|O_NDELAY);
-    if(-1 == temp_fd)
-    {
-        printf("Open Serial Port Error!\n");
-        return -1;
-    }
-    if( (fcntl(temp_fd, F_SETFL, 0)) < 0 )
-    {
-        printf("Fcntl F_SETFL Error!\n");
-        return -1;
-    }
-    if(tcgetattr(temp_fd, &stOld) != 0)
-    {
-        printf("tcgetattr error!\n");
-        return -1;
-    }
-    stNew = stOld;
-    cfmakeraw(&stNew);//将终端设置为原始模式，该模式下所有的输入数据以字节为单位被处理
-    //set speed
-    cfsetispeed(&stNew, 115200);//115200
-    //cfsetospeed(&stNew, BAUDRATE);
-    //set databits
-    stNew.c_cflag |= (CLOCAL|CREAD);
-    stNew.c_cflag &= ~CSIZE;
-    stNew.c_cflag |= CS8;
-    //set parity
-    stNew.c_cflag &= ~PARENB;
-    stNew.c_iflag &= ~INPCK;
-    //set stopbits
-    stNew.c_cflag &= ~CSTOPB;
-    stNew.c_cc[VTIME]=0;    //指定所要读取字符的最小数量
-    stNew.c_cc[VMIN]=1; //指定读取第一个字符的等待时间，时间的单位为n*100ms
-                //如果设置VTIME=0，则无字符输入时read（）操作无限期的阻塞
-    tcflush(temp_fd,TCIFLUSH);  //清空终端未完成的输入/输出请求及数据。
-    if( tcsetattr(temp_fd,TCSANOW,&stNew) != 0 )
-    {
-        perror("tcsetattr Error!\n");
-        return -1;
-    }
-    return temp_fd;
-}
 
 int main(void)
 {
@@ -1329,22 +1274,13 @@ int main(void)
 		printf("wiringpi setup failed!\n");
 		return 1;
 	}
-
-	if((usart_fd = SerialInit()) ==-1)
-	{
-		printf("serial open failed!\n");
-		return 1;
-	}
-	printf("serial test start ...\n");
-
-	/*
 	if((usart_fd = serialOpen("/dev/ttyAMA0",115200)) < 0)
 	{
 		printf("serial open failed!\n");
 		return 1;
 	}
 	printf("serial test start ...\n");
-*/
+
 	//ret=pthread_create(&id,NULL,(void *) thread,NULL);
 	if(pthread_create(&id,NULL,(void *) thread,NULL)!=0)
 	{
@@ -1377,7 +1313,7 @@ if(pthread_create(&send_usart_pr,NULL,(void *) thread_send,NULL)!=0)
 
 		list = curl_slist_append(list, "Content-Type: application/json");
 		curl_easy_setopt(posturl, CURLOPT_HTTPHEADER, list);
-		curl_easy_setopt(posturl, CURLOPT_URL, "10.28.1.28:10080/api/devices");
+		curl_easy_setopt(posturl, CURLOPT_URL, "127.0.0.1:10080/api/devices");
 		curl_easy_setopt(posturl, CURLOPT_HTTPPOST, 1L);
 		curl_easy_setopt(posturl, CURLOPT_WRITEFUNCTION, writer);
 		//curl_easy_setopt(posturl, CURLOPT_WRITEDATA, &headerStr);
@@ -1414,7 +1350,7 @@ if(pthread_create(&send_usart_pr,NULL,(void *) thread_send,NULL)!=0)
 	}
 	
 
-	//serialClose(usart_fd);
+	serialClose(usart_fd);
 	return (0);
 }
 
