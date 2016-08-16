@@ -40,6 +40,10 @@ sudo find / -name libmicrohttpd*
 #include <stddef.h>
 #include <curl.h>
 
+#include   <sys/ioctl.h> 
+#include   <sys/socket.h> 
+#include   <netinet/in.h> 
+#include   <net/if.h> 
 
 #define XMKG_M_ID     		0X2d81 //a
 #define XMKG_X_ID      		0Xeb38
@@ -166,7 +170,8 @@ typedef unsigned short uint16_t;
 #define MXJ_XIAOMI1C                 0x1C
 #define MXJ_SEND_DATA                0xff
 
-
+struct   ifreq   ifreq; 
+int   sock; 
 
 
 int permitjoin = 0;
@@ -339,7 +344,9 @@ char *re_body;
   if (0 == strcmp (method, "GET"))
     {	
 		//printf("get json_str = %s\n",json_str);
-			return send_page (connection, errorpage);
+		char str[200]={0};
+		sprintf(str,"%02x:%02x:%02x:%02x:%02x:%02x\n",(unsigned   char)ifreq.ifr_hwaddr.sa_data[0], (unsigned   char)ifreq.ifr_hwaddr.sa_data[1],  (unsigned   char)ifreq.ifr_hwaddr.sa_data[2], (unsigned   char)ifreq.ifr_hwaddr.sa_data[3], (unsigned   char)ifreq.ifr_hwaddr.sa_data[4], (unsigned   char)ifreq.ifr_hwaddr.sa_data[5]);
+			return send_page (connection, str);
     }
   
   //printf("method= %s\n", method);
@@ -391,7 +398,7 @@ char *re_body;
 				if(json_object_to_json_string(my_object) != NULL && (0 != strcmp (json_object_to_json_string(my_object), "null")))
 				{
 					  uint16_t address=0;
-					  uint8_t index=0,resourceSum=0,commandint=255;
+					  uint8_t index=0,resourceSum=0,commandint=255,commandData=0;
 					  const char * command;
 					  post_type = 1;
 					  
@@ -401,12 +408,15 @@ char *re_body;
 					  json_object_object_get_ex(my_object, "index",&Jindex);
 					  json_object *Jcommand = NULL;
 					  json_object_object_get_ex(my_object, "command",&Jcommand);
+					  json_object *JcommandData = NULL;
+					  json_object_object_get_ex(my_object, "commandData",&JcommandData);
 					  json_object *JresourceSum = NULL;
 					  json_object_object_get_ex(my_object, "resourceSum",&JresourceSum);
 					  
 					  address = (uint16_t)json_object_get_int(Jaddress);
 					  index = (uint16_t)json_object_get_int(Jindex);
 					  command = json_object_to_json_string(Jcommand);
+					  commandData = (uint16_t)json_object_get_int(JcommandData);
 					  resourceSum = (uint16_t)json_object_get_int(JresourceSum);
 					  //printf("address=%d\n", address);
 					  //printf("index=%d\n", index);
@@ -435,6 +445,9 @@ char *re_body;
 					  		if(0 == strcmp (command, "\"On\""))
 					  		{
 					  			commandint = 1;
+					  			if(commandData <= 255&&commandData>0)
+					  				commandint = commandData;
+
 					  		}
 					  		if(0 == strcmp (command, "\"Off\""))
 					  		{
@@ -717,7 +730,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		}
 		char str[200]={0};
 		char str_url[200]={0};
-		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"linkQuality\":\"%d\"}",id,rx[8],event,rx[len-1]);
+		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,rx[8],event,rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
 		sprintf(str_url,"127.0.0.1:%d/device/API/command",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
@@ -759,7 +772,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
   		}
 		char str[200]={0};
 		char str_url[200]={0};
-		sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\"}",id,deviceType,rx[8],rx[len-1]);
+		sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,deviceType,rx[8],rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
 		sprintf(str_url,"127.0.0.1:%d/device/API/deviceReg",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
@@ -782,7 +795,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		char strtemp[200]={0};
 		char str_url[200]={0};
 		int i=0;
-		sprintf(str,"{\"address\":\"%d\",\"linkQuality\":\"%d\",\"status\":[",id,rx[len-1]);
+		sprintf(str,"{\"address\":\"%d\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\",\"status\":[",id,rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
 		for(i=0;i<rx[7];i++)
 		{
 			sprintf(strtemp,"{\"value\":\"%d\"}",rx[8+i]);
@@ -828,7 +841,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		}
 		char str[200]={0};
 		char str_url[200]={0};
-		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"data\":\"%d\",\"type\":\"%s\",\"linkQuality\":\"%d\"}",id,rx[8],tempdata,type,rx[len-1]);
+		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"data\":\"%d\",\"type\":\"%s\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,rx[8],tempdata,type,rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
 		sprintf(str_url,"127.0.0.1:%d/device/API/command",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
@@ -849,7 +862,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	{
 		char str[200]={0};
 		char str_url[200]={0};
-		sprintf(str,"{\"address\":\"%d\",\"linkQuality\":\"%d\"}",id,rx[len-1]);
+		sprintf(str,"{\"address\":\"%d\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
 		sprintf(str_url,"127.0.0.1:%d/device/API/feedback/ping",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
@@ -886,7 +899,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	{
 		char str[200]={0};
 		char str_url[200]={0};
-		sprintf(str,"{\"address\":\"%d\"}",id);
+		sprintf(str,"{\"address\":\"%d\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
 		sprintf(str_url,"127.0.0.1:%d/device/API/rest",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
@@ -905,7 +918,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 
 	if(cid == 6)
 	{
-		if(len != 13 + 1)break;
+		if(len != 13 + 1 + 8)break;
 		//printf("control up - find id = %d\n",i);
 		//printf("id:%4x\n",id);
 		if(rx[11] == 0x20)
@@ -913,7 +926,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 			//printf("double kick\n");
 			char str[200]={0};
 			char str_url[200]={0};
-			sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"linkQuality\":\"%d\"}",id,1,"DoubleClick",rx[len-1]);
+			sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,1,"DoubleClick",rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
 			sprintf(str_url,"127.0.0.1:%d/device/API/command",PORT_CLIENT);
 			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 			curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
@@ -943,7 +956,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 			}
 			char str[200]={0};
 			char str_url[200]={0};
-			sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"linkQuality\":\"%d\"}",id,1,event,rx[len-1]);
+			sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,1,event,rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
 			sprintf(str_url,"127.0.0.1:%d/device/API/command",PORT_CLIENT);
 			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 			curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
@@ -959,13 +972,13 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	}
 	else if(cid == 0x406)
 	{
-		if(len != 13 + 1)break;
+		if(len != 13 + 1 + 8)break;
 		//printf("control up - find id = %d\n",i);
 		//printf("id:%4x\n",id);
 		//printf("human detected\n");
 		char str[200]={0};
 		char str_url[200]={0};
-		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"linkQuality\":\"%d\"}",id,1,"BodyMove",rx[len-1]);
+		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,1,"BodyMove",rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
 		sprintf(str_url,"127.0.0.1:%d/device/API/command",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
@@ -980,7 +993,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	else if(cid == 0x402)
 	{
 		int16_t temp = 0;
-		if(len != 14 + 1)break;
+		if(len != 14 + 1 + 8)break;
 		static uint8_t temp_flag = 0;
 		temp = rx[13];
 		temp <<= 8;
@@ -990,7 +1003,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		//printf("temperature = %02f\n",(float)temp/100);
 		char str[200]={0};
 		char str_url[200]={0};
-		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"type\":\"%s\",\"data\":\"%f\",\"linkQuality\":\"%d\"}",id,1,"Temperature",(float)temp/100,rx[len-1]);
+		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"type\":\"%s\",\"data\":\"%f\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,1,"Temperature",(float)temp/100,rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
 		sprintf(str_url,"127.0.0.1:%d/device/API/value",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
@@ -1006,7 +1019,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	else if(cid == 0x405)
 	{
 	 	uint16_t temp = 0;
-		if(len != 14 + 1)break;
+		if(len != 14 + 1 + 8)break;
 		temp = rx[13];
 		temp <<= 8;
 		temp |= rx[12];
@@ -1015,7 +1028,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		//printf("humidity = %02f\n",(float)temp/100);
 		char str[200]={0};
 		char str_url[200]={0};
-		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"type\":\"%s\",\"data\":\"%f\",\"linkQuality\":\"%d\"}",id,1,"Humidity",(float)temp/100,rx[len-1]);
+		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"type\":\"%s\",\"data\":\"%f\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,1,"Humidity",(float)temp/100,rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
 		sprintf(str_url,"127.0.0.1:%d/device/API/value",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
@@ -1029,7 +1042,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	}
   	
 	
-	if(len>=27 && len < 32 + 1)
+	if(len>=27 && len < 32 + 1 + 8)
 		{
 			if(cid == 0 && rx[12] <= len - 13)
 			{
@@ -1043,7 +1056,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 					//printf("switch join\n");
 					char str[200]={0};
 					char str_url[200]={0};
-					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\"}",id,"MiButton",1,rx[len-1]);
+					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,"MiButton",1,rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
 					sprintf(str_url,"127.0.0.1:%d/device/API/deviceReg",PORT_CLIENT);
 					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
@@ -1060,7 +1073,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 					//printf("magnet join\n");
 					char str[200]={0};
 					char str_url[200]={0};
-					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\"}",id,"MagnetSensor",1,rx[len-1]);
+					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,"MagnetSensor",1,rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
 					sprintf(str_url,"127.0.0.1:%d/device/API/deviceReg",PORT_CLIENT);
 					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
@@ -1077,7 +1090,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 					//printf("motion join\n");
 					char str[200]={0};
 					char str_url[200]={0};
-					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\"}",id,"BodySensor",1,rx[len-1]);
+					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,"BodySensor",1,rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
 					sprintf(str_url,"127.0.0.1:%d/device/API/deviceReg",PORT_CLIENT);
 					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
@@ -1094,7 +1107,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 					//printf("ht join\n");
 					char str[200]={0};
 					char str_url[200]={0};
-					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\"}",id,"TemperatureSensor",1,rx[len-1]);
+					sprintf(str,"{\"address\":\"%d\",\"deviceType\":\"%s\",\"resourceSum\":\"%d\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,"TemperatureSensor",1,rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
 					sprintf(str_url,"127.0.0.1:%d/device/API/deviceReg",PORT_CLIENT);
 					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
@@ -1109,13 +1122,13 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 			}
 		}
 
-		if(cid == 0 && len == 40 + 1)
+		if(cid == 0 && len == 40 + 1 + 8)
 		{
 			char str[200]={0};
 			char strtemp[200]={0};
 			char str_url[200]={0};
 			int i=0;
-			sprintf(str,"{\"address\":\"%d\",\"linkQuality\":\"%d\"}",id,rx[len-1]);
+			sprintf(str,"{\"address\":\"%d\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
 			
 			sprintf(str_url,"127.0.0.1:%d/device/API/feedback/status",PORT_CLIENT);
 			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
@@ -1136,13 +1149,13 @@ void recieve_usart(uint8_t *rx,uint8_t len)
     break;
 
 	case MXJ_XIAOMI1C:
-		if(cid == 0 && len == 35 + 1)
+		if(cid == 0 && len == 35 + 1 + 8)
 		{
 			char str[200]={0};
 			char strtemp[200]={0};
 			char str_url[200]={0};
 			int i=0;
-			sprintf(str,"{\"address\":\"%d\",\"linkQuality\":\"%d\"}",id,rx[len-1]);
+			sprintf(str,"{\"address\":\"%d\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
 			
 			sprintf(str_url,"127.0.0.1:%d/device/API/feedback/status",PORT_CLIENT);
 			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
@@ -1268,7 +1281,20 @@ int main(void)
   struct MHD_Daemon *daemon;
   uint8_t i=0;
   
-  
+  if((sock=socket(AF_INET,SOCK_STREAM,0)) <0) 
+    { 
+        printf( "socket error\n"); 
+        return   1; 
+    } 
+
+    strcpy(ifreq.ifr_name,"eth0");
+    if(ioctl(sock,SIOCGIFHWADDR,&ifreq) <0) 
+    { 
+        printf( "ioctl error\n"); 
+        return   1; 
+    } 
+
+
 	if(wiringPiSetup() < 0)
 	{
 		printf("wiringpi setup failed!\n");
