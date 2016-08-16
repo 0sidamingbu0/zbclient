@@ -8,4 +8,5 @@ sudo ln -s /usr/lib/arm-linux-gnueabihf/libmicrohttpd.so.12.37.0 /usr/lib/arm-li
 sudo ln -s /usr/lib/arm-linux-gnueabihf/libmicrohttpd.so.12 /usr/lib/arm-linux-gnueabihf/libmicrohttpd.so
 chmod 777 join reset zbclient
 sudo cp zbclient /usr/bin
+sudo rm -rf .git
 sudo supervisorctl start zbclient
