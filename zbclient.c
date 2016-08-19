@@ -57,7 +57,7 @@ sudo find / -name libmicrohttpd*
 #define SWITCH_ALAM_ID      0X1294
 #define SWITCH_OUTSIDE_ID   0X5de1
 #define POWER_ID       		0X444e
-#define DOOR_IN_ID       	0X268c //??¡¤??
+#define DOOR_IN_ID       	0X268c //??Â¡Â¤??
 #define DOOR_OUT_ID       	0X8F46 
 
 #define SWITCH2_ID_1      0X1294
@@ -111,7 +111,7 @@ sudo find / -name libmicrohttpd*
 
 
 
-typedef unsigned char   uint8_t;     //?¡ª ??|?¡¤8????¡ã
+typedef unsigned char   uint8_t;     //?Â¡Âª ??|?Â¡Â¤8????Â¡Ã£
 typedef unsigned short uint16_t;  
 
 
@@ -561,7 +561,7 @@ uint8_t fifo_read(uint8_t **data1,uint8_t *len)
 
 
 
-void send_usart(uint8_t *data,uint8_t len) //id,state1,state2,state3 1=?a,0=1?,2=¡À¡ê3?
+void send_usart(uint8_t *data,uint8_t len) //id,state1,state2,state3 1=?a,0=1?,2=Â¡Ã€Â¡Ãª3?
 {
   uint8_t txbuf[100];
   uint8_t i=0;
@@ -669,6 +669,8 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 {
   int i=0,j=0;
   int id=0,cid=0;
+  char eventDataStr[50];
+  uint32_t eventData32 = 0;
   digitalWrite(27,HIGH);
   led_state = 0;
   time(&now);
@@ -693,7 +695,12 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	}
   
 
-  
+//USART RECIEVE:time=2016-8-19 17:14:24 len=23 data=01 16 27 1a 00 0c 01 06 01 08 00 1b 73 7c 00 12 4b 00 07 dc 27 58 89
+//POST SEND:time=2016-8-19 17:14:24 url=127.0.0.1:10080/device/API/command body={"address":"10010","indaddressex":"1","event":"ReportCardId","linkQuality":"137"}
+
+//USART RECIEVE:time=2016-8-19 17:15:18 len=23 data=01 16 27 1a 00 0c 01 06 01 09 02 00 01 06 00 12 4b 00 07 dc 27 58 94
+//POST SEND:time=2016-8-19 17:15:18 url=127.0.0.1:10080/device/API/command body={"address":"10010","indaddressex":"1","event":"ReportPassword","linkQuality":"148"}
+ 
  
   if(len>=4)
 	{
@@ -724,13 +731,33 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 			case 5: event = "ReportData";break;
 			case 6: event = "LongPress";break;
 			case 7: event = "TriggerByCloud";break;	
-			case 8: event = "ReportCardId";break;
-			case 9: event = "ReportPassword";break;	
+			case 8: event = "ReportCardId";
+					eventData32 = rx[10];
+					eventData32 <<= 8;
+					eventData32 |= rx[11];
+					eventData32 <<= 8;
+					eventData32 |= rx[12];
+					eventData32 <<= 8;
+					eventData32 |= rx[13];
+					sprintf(eventDataStr, "%u", eventData32);
+
+			break;
+			case 9: event = "ReportPassword";
+					eventDataStr[0] = '\0';
+					for(i=0;i<rx[7]-2;i++)
+					{
+						char strtemp[2];
+						sprintf(strtemp, "%d", rx[10+i]);
+						strcat(eventDataStr,strtemp);
+					}
+					
+					
+			break;	
 			default : event = "Unknow event";
 		}
 		char str[200]={0};
 		char str_url[200]={0};
-		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,rx[8],event,rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
+		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"eventData\":\"%s\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,rx[8],event,eventDataStr,rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
 		sprintf(str_url,"127.0.0.1:%d/device/API/command",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
@@ -1047,7 +1074,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 			if(cid == 0 && rx[12] <= len - 13)
 			{
 				 uint8_t *temp_str = NULL;
-				/*¡¤????¨²¡ä?????*/
+				/*Â¡Â¤????Â¨Â²Â¡Ã¤?????*/
 				temp_str = (uint8_t*)calloc(rx[12],sizeof(uint8_t));
 				strncpy(temp_str, &rx[13],rx[12]);
 				//printf("temp_str = %s\n",temp_str);
@@ -1280,7 +1307,8 @@ int main(void)
     pthread_t send_usart_pr; 
   struct MHD_Daemon *daemon;
   uint8_t i=0;
-  
+
+
   if((sock=socket(AF_INET,SOCK_STREAM,0)) <0) 
     { 
         printf( "socket error\n"); 
@@ -1391,7 +1419,7 @@ if(pthread_create(&send_usart_pr,NULL,(void *) thread_send,NULL)!=0)
  */
 void MXJ_SendCtrlMessage( uint16_t id ,uint8_t len,uint8_t msg1 , uint8_t msg2 , uint8_t msg3 )
 {
-//  uint8_t data[5]={MXJ_CTRL_DOWN,3,msg1,msg2,msg3};//¨¨?a????1¡ë??¡ã??
+//  uint8_t data[5]={MXJ_CTRL_DOWN,3,msg1,msg2,msg3};//Â¨Â¨?a????1Â¡Ã«??Â¡Ã£??
   uint8_t data[7]={0,len+3,(uint8_t)(id>>8),(uint8_t)id,msg1,msg2,msg3};
   send_usart(data,4+len);
 }
@@ -1405,9 +1433,9 @@ void MXJ_SendCtrlMessage( uint16_t id ,uint8_t len,uint8_t msg1 , uint8_t msg2 ,
  *
  * @return  none
  
-      //uint8_t data[7]={0,6,0x17,0x1f,1,1,1};//?????¨¹¨¢??y
-     //uint8_t data[4]={10,3,0x17,0x1f};//?a1????????t??¨¨??y
-     //uint8_t data[12]={8,11,0x17,0x1f,0,0,0x7b,0x4f,1,2,2,1};//?a1????????t¨¦¨¨???y    
+      //uint8_t data[7]={0,6,0x17,0x1f,1,1,1};//?????Â¨Â¹Â¨Â¢??y
+     //uint8_t data[4]={10,3,0x17,0x1f};//?a1????????t??Â¨Â¨??y
+     //uint8_t data[12]={8,11,0x17,0x1f,0,0,0x7b,0x4f,1,2,2,1};//?a1????????tÂ¨Â¦Â¨Â¨???y    
      //send_usart(data,12);
  */
 void MXJ_SendRegisterMessage( uint16_t id, uint8_t state )
@@ -1429,13 +1457,13 @@ void MXJ_SendRegisterMessage( uint16_t id, uint8_t state )
 
 void MXJ_SendPingMessage( uint16_t id )
 {
-  uint8_t data[4]={0x0f,3,(uint8_t)(id>>8),(uint8_t)id};//¨¨?a????1¡ë??¡ã??
+  uint8_t data[4]={0x0f,3,(uint8_t)(id>>8),(uint8_t)id};//Â¨Â¨?a????1Â¡Ã«??Â¡Ã£??
   send_usart(data,4);
 }
 
 void MXJ_GetIdxMessage( uint16_t id )
 {
-  uint8_t data[4]={0x0b,3,(uint8_t)(id>>8),(uint8_t)id};//¨¨?a????1¡ë??¡ã??
+  uint8_t data[4]={0x0b,3,(uint8_t)(id>>8),(uint8_t)id};//Â¨Â¨?a????1Â¡Ã«??Â¡Ã£??
   send_usart(data,4);
 }
 
@@ -1450,7 +1478,7 @@ void MXJ_GetIdxMessage( uint16_t id )
  */
 void MXJ_GetStateMessage( uint16_t id )
 {
-  uint8_t data[4]={5,3,(uint8_t)(id>>8),(uint8_t)id};//¡Á??¡§¨°?¨ºy?Y
+  uint8_t data[4]={5,3,(uint8_t)(id>>8),(uint8_t)id};//Â¡Ã??Â¡Â§Â¨Â°?Â¨Âºy?Y
   send_usart(data,4);
 }
 
