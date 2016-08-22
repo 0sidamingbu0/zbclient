@@ -191,6 +191,7 @@ time_t now;
 struct tm *tblock; 
 
 CURL* posturl;
+FILE *sp;
 
 void send_usart(uint8_t *data,uint8_t len);
 void MXJ_SendRegisterMessage( uint16_t , uint8_t );
@@ -201,7 +202,7 @@ void MXJ_SendCtrlMessage( uint16_t ,uint8_t len, uint8_t , uint8_t , uint8_t );
 void MXJ_SendStateMessage( uint16_t );
 
 void MXJ_GetStateMessage( uint16_t id );
-
+void printf_file(char * str);
 
 typedef struct
 {
@@ -315,7 +316,7 @@ char *CreateTime;
 char *FromUserName;
 
 char *re_body;
-  FILE *sp;
+  
   //printf ("====New %s request for %s using version %s\n", method, url, version);
  
   time(&now);
@@ -358,10 +359,10 @@ char *re_body;
 	  if(0 == strcmp (url, "/zbClient/API/permit"))
 		{
 			permitjoin = 1;
-			printf("POST RECIEVE:time: %d-%d-%d %d:%d:%d len=0 url=%s version=%s body=NULL\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version);
+			printf("[%d-%d-%d %d:%d:%d] POST RECIEVE len=0 url=%s version=%s body=NULL\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version);
 		 	if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		    {
-			    fprintf(sp,"POST RECIEVE:time=%d-%d-%d %d:%d:%d len=0 url=%s version=%s body=NULL\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec, url, version);
+			    fprintf(sp,"[%d-%d-%d %d:%d:%d] POST RECIEVE len=0 url=%s version=%s body=NULL\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec, url, version);
 			    fclose(sp);
 		    }
 		}
@@ -383,12 +384,12 @@ char *re_body;
 				//printf("len2=%d\n",len2); 
 				//re_body = (uint8_t*)calloc(len2,sizeof(uint8_t));
 				//strncpy(re_body,body,len2);
-				printf("POST RECIEVE:time=%d-%d-%d %d:%d:%d len=%d url=%s version=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version,body);
+				printf("[%d-%d-%d %d:%d:%d] POST RECIEVE len=%d url=%s version=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version,body);
 			}
 		
 			if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 			{
-				fprintf(sp,"POST RECIEVE:time=%d-%d-%d %d:%d:%d len=%d url=%s version=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version,body);
+				fprintf(sp,"[%d-%d-%d %d:%d:%d] POST RECIEVE len=%d url=%s version=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version,body);
 				fclose(sp);
 			}
 		
@@ -603,7 +604,7 @@ void thread_send(void)
 		else
 			digitalWrite(24,LOW);
 
-		FILE *sp;
+		
 		if(fifo_read(&txbuf,&len))
 		{			
 			time(&now);
@@ -611,7 +612,7 @@ void thread_send(void)
 			
 			if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 			{
-				fprintf(sp,"USART SEND:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
+				fprintf(sp,"[%d-%d-%d %d:%d:%d] USART SEND len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
 				for(i=0;i<len;i++)
 				  {
 				    fprintf(sp,"%02x ",txbuf[i]);
@@ -620,7 +621,7 @@ void thread_send(void)
 				  fclose(sp);
 			}
 			
-			printf("USART SEND:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
+			printf("[%d-%d-%d %d:%d:%d] USART SEND len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
 
 			for(i=0;i<len;i++)
 			{
@@ -684,10 +685,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 
 
   
-  FILE *sp;
+  
   if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 	{
-		fprintf(sp,"USART RECIEVE:time=%d-%d-%d %d:%d:%d len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
+		fprintf(sp,"[%d-%d-%d %d:%d:%d] USART RECIEVE len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
 		for(i=0;i<len;i++)
     		fprintf(sp,"%02x ",rx[i]);
 		fprintf(sp,"\n");
@@ -763,10 +764,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);	
 		
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		printf("[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}
 						
@@ -804,10 +805,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		printf("[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}
 		
@@ -838,10 +839,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		printf("[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}	
 	break;
@@ -874,10 +875,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);	
 		
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		printf("[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}
 						
@@ -894,10 +895,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		printf("[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}    
     break;
@@ -912,10 +913,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		printf("[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}
 
@@ -931,10 +932,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		printf("[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}		
     break;
@@ -958,10 +959,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 			curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 			curl_easy_perform(posturl);	
-			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+			printf("[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 			if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 			{
-				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+				fprintf(sp,"[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 				  fclose(sp);
 			}			
 		}
@@ -988,10 +989,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 			curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 			curl_easy_perform(posturl); 
-			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+			printf("[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 			if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 			{
-				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+				fprintf(sp,"[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 				  fclose(sp);
 			}
 
@@ -1010,10 +1011,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);	
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		printf("[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}		
 	}
@@ -1035,10 +1036,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);	
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		printf("[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}		
 
@@ -1060,10 +1061,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);		
-		printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+		printf("[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 		if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 		{
-			fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+			fprintf(sp,"[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 			  fclose(sp);
 		}		
 	}
@@ -1088,10 +1089,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 					curl_easy_perform(posturl);	
-					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+					printf("[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 					if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 					{
-						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+						fprintf(sp,"[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 						  fclose(sp);
 					}					
 				}
@@ -1105,10 +1106,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 					curl_easy_perform(posturl);			
-					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+					printf("[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 					if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 					{
-						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+						fprintf(sp,"[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 						  fclose(sp);
 					}					
 				}
@@ -1122,10 +1123,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 					curl_easy_perform(posturl);	
-					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+					printf("[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 					if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 					{
-						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+						fprintf(sp,"[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 						  fclose(sp);
 					}					
 				}
@@ -1139,10 +1140,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 					curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 					curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 					curl_easy_perform(posturl);	
-					printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+					printf("[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 					if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 					{
-						fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+						fprintf(sp,"[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 						  fclose(sp);
 					}					
 				}
@@ -1161,10 +1162,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 			curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 			curl_easy_perform(posturl);
-			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+			printf("[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 			if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 			{
-				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+				fprintf(sp,"[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 				  fclose(sp);
 			}
 		}
@@ -1188,10 +1189,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 			curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 			curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 			curl_easy_perform(posturl);
-			printf("POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
+			printf("[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);
 			if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 			{
-				fprintf(sp,"POST SEND:time=%d-%d-%d %d:%d:%d url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
+				fprintf(sp,"[%d-%d-%d %d:%d:%d] POST SEND url=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,str_url,str);			
 				  fclose(sp);
 			}
 		}
@@ -1307,7 +1308,7 @@ int main(void)
     pthread_t send_usart_pr; 
   struct MHD_Daemon *daemon;
   uint8_t i=0;
-
+	printf_file("ZBCLIENT STARTING...\n");
 
   if((sock=socket(AF_INET,SOCK_STREAM,0)) <0) 
     { 
@@ -1391,6 +1392,7 @@ if(pthread_create(&send_usart_pr,NULL,(void *) thread_send,NULL)!=0)
   	digitalWrite(22,HIGH);
 	
   	usleep(500000);
+  	printf_file("ZBCLIENT STARTED\n");
 	static int flag_led = 1;
 	while(1)
 	{  
@@ -1481,4 +1483,15 @@ void MXJ_GetStateMessage( uint16_t id )
   uint8_t data[4]={5,3,(uint8_t)(id>>8),(uint8_t)id};//¡Á??¡§¨°?¨ºy?Y
   send_usart(data,4);
 }
+void printf_file(char * str)
+{
+	time(&now);
+	tblock = localtime(&now);
 
+	if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
+	{
+		fprintf(sp,"[%d-%d-%d %d:%d:%d] ", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec);
+		fprintf(sp,str);			
+		fclose(sp);
+	}
+}
