@@ -45,6 +45,11 @@ sudo find / -name libmicrohttpd*
 #include   <netinet/in.h> 
 #include   <net/if.h> 
 
+char * softversion = "ZB2016082200";
+char   returnstr[200]={0};
+char hostname[50]={0};
+char startTime[50]={0};
+
 #define XMKG_M_ID     		0X2d81 //a
 #define XMKG_X_ID      		0Xeb38
 #define XMKG_ENTER_ID      	0Xced9
@@ -236,8 +241,7 @@ const char *greetingpage =
 const char *errorpage =
   "<html><body>This doesn't seem to be right.</body></html>";
 
-const char *idolpage =
-  "<html><body>hello idol</body></html>";
+const char *idolpage ;
 
 
 long writer(void *data, int size, int nmemb, char *content)
@@ -344,10 +348,24 @@ char *re_body;
 
   if (0 == strcmp (method, "GET"))
     {	
-		//printf("get json_str = %s\n",json_str);
-		char str[200]={0};
-		sprintf(str,"%02x:%02x:%02x:%02x:%02x:%02x\n",(unsigned   char)ifreq.ifr_hwaddr.sa_data[0], (unsigned   char)ifreq.ifr_hwaddr.sa_data[1],  (unsigned   char)ifreq.ifr_hwaddr.sa_data[2], (unsigned   char)ifreq.ifr_hwaddr.sa_data[3], (unsigned   char)ifreq.ifr_hwaddr.sa_data[4], (unsigned   char)ifreq.ifr_hwaddr.sa_data[5]);
-			return send_page (connection, str);
+    	//int len=0;
+    	gethostname(hostname,50);
+    	//hostname[len]='\0';
+		if(ioctl(sock,SIOCGIFHWADDR,&ifreq) <0) 
+	    { 
+	        printf( "ioctl error\n"); 
+	        return   1; 
+	    } 
+		char mac[6]={ifreq.ifr_hwaddr.sa_data[0],ifreq.ifr_hwaddr.sa_data[1],ifreq.ifr_hwaddr.sa_data[2],ifreq.ifr_hwaddr.sa_data[3],ifreq.ifr_hwaddr.sa_data[4],ifreq.ifr_hwaddr.sa_data[5]};
+		if(ioctl(sock,SIOCGIFADDR,&ifreq)<0) 
+		{   //这里涉及ioctl函数对于网络文件的控制（下面会介绍）
+		    printf("Ip Not set\n");
+		}
+		sprintf(returnstr,"[%02x:%02x:%02x:%02x:%02x:%02x] [%d.%d.%d.%d] version=[%s] hostname=[%s] startTime=%s\n\0",
+			(unsigned   char)mac[0], (unsigned   char)mac[1],  (unsigned   char)mac[2], (unsigned   char)mac[3], (unsigned   char)mac[4], (unsigned   char)mac[5],
+			(unsigned char)ifreq.ifr_addr.sa_data[2],(unsigned char)ifreq.ifr_addr.sa_data[3],(unsigned char)ifreq.ifr_addr.sa_data[4],(unsigned char)ifreq.ifr_addr.sa_data[5],
+			softversion,hostname,startTime);
+		return send_page (connection, returnstr);
     }
   
   //printf("method= %s\n", method);
@@ -375,7 +393,7 @@ char *re_body;
 		
 		const char* length = MHD_lookup_connection_value (connection, MHD_HEADER_KIND, MHD_HTTP_HEADER_CONTENT_LENGTH); 	
 			const char* body = MHD_lookup_connection_value (connection, MHD_POSTDATA_KIND, NULL);	
-				
+
 			//printf("length=%s\n",length);
 			//printf("body=%s\n",body);
 			//printf("url=%s\n",url); 
@@ -1319,11 +1337,6 @@ int main(void)
     } 
 
     strcpy(ifreq.ifr_name,"eth0");
-    if(ioctl(sock,SIOCGIFHWADDR,&ifreq) <0) 
-    { 
-        printf( "ioctl error\n"); 
-        return   1; 
-    } 
 
 
 	if(wiringPiSetup() < 0)
@@ -1395,6 +1408,11 @@ if(pthread_create(&send_usart_pr,NULL,(void *) thread_send,NULL)!=0)
 	
   	usleep(500000);
   	printf_file("ZBCLIENT STARTED\n");
+
+	time(&now);
+	tblock = localtime(&now);
+	sprintf(startTime,"[%d-%d-%d %d:%d:%d] ", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec);
+
 	static int flag_led = 1;
 	while(1)
 	{  
