@@ -374,7 +374,8 @@ char *re_body;
 		
 		
 		const char* length = MHD_lookup_connection_value (connection, MHD_HEADER_KIND, MHD_HTTP_HEADER_CONTENT_LENGTH); 	
-			const char* body = MHD_lookup_connection_value (connection, MHD_POSTDATA_KIND, NULL);		
+			const char* body = MHD_lookup_connection_value (connection, MHD_POSTDATA_KIND, NULL);	
+				
 			//printf("length=%s\n",length);
 			//printf("body=%s\n",body);
 			//printf("url=%s\n",url); 
@@ -756,6 +757,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 			break;	
 			default : event = "Unknow event";
 		}
+		eventDataStr[0] = '\0';
 		char str[200]={0};
 		char str_url[200]={0};
 		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"eventData\":\"%s\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,rx[8],event,eventDataStr,rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
