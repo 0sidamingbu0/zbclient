@@ -760,7 +760,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 					eventData32 <<= 8;
 					eventData32 |= rx[13];
 					sprintf(eventDataStr, "%u", eventData32);
-
+					//eventDataStr[4] = '\0';
 			break;
 			case 9: event = "ReportPassword";
 					eventDataStr[0] = '\0';
@@ -770,12 +770,12 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 						sprintf(strtemp, "%d", rx[10+i]);
 						strcat(eventDataStr,strtemp);
 					}
-					
+					eventDataStr[rx[7]-2] = '\0';
 					
 			break;	
 			default : event = "Unknow event";
 		}
-		eventDataStr[0] = '\0';
+		
 		char str[200]={0};
 		char str_url[200]={0};
 		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"event\":\"%s\",\"eventData\":\"%s\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,rx[8],event,eventDataStr,rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
