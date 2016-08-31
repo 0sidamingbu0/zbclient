@@ -45,7 +45,7 @@ sudo find / -name libmicrohttpd*
 #include   <netinet/in.h> 
 #include   <net/if.h> 
 
-char * softversion = "ZB2016082200";
+char * softversion = "ZB2016083100";
 char   returnstr[200]={0};
 char hostname[50]={0};
 char startTime[50]={0};
