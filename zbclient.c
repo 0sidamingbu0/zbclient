@@ -45,7 +45,7 @@ sudo find / -name libmicrohttpd*
 #include   <netinet/in.h> 
 #include   <net/if.h> 
 
-char * softversion = "ZB2016083100";
+char * softversion = "ZB2016091200";
 char   returnstr[200]={0};
 char hostname[50]={0};
 char startTime[50]={0};
@@ -890,7 +890,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 		char str[200]={0};
 		char str_url[200]={0};
 		sprintf(str,"{\"address\":\"%d\",\"indaddressex\":\"%d\",\"data\":\"%d\",\"type\":\"%s\",\"linkQuality\":\"%d\",\"macAddr\":\"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\"}",id,rx[8],tempdata,type,rx[len-1],rx[len-9],rx[len-8],rx[len-7],rx[len-6],rx[len-5],rx[len-4],rx[len-3],rx[len-2]);
-		sprintf(str_url,"127.0.0.1:%d/device/API/command",PORT_CLIENT);
+		sprintf(str_url,"127.0.0.1:%d/device/API/value",PORT_CLIENT);
 		curl_easy_setopt(posturl, CURLOPT_URL, str_url);
 		curl_easy_setopt(posturl, CURLOPT_POSTFIELDS,str);
 		curl_easy_perform(posturl);	
