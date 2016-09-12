@@ -763,7 +763,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 					//eventDataStr[4] = '\0';
 			break;
 			case 9: event = "ReportPassword";
-					eventDataStr[0] = '\0';
+					//eventDataStr[0] = '\0';
 					for(i=0;i<rx[7]-2;i++)
 					{
 						char strtemp[2];
