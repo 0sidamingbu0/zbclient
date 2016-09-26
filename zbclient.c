@@ -45,11 +45,11 @@ sudo find / -name libmicrohttpd*
 #include   <netinet/in.h> 
 #include   <net/if.h> 
 
-char * softversion = "ZB2016091200";
+char * softversion = "ZB2016092600";
 char   returnstr[200]={0};
 char hostname[50]={0};
 char startTime[50]={0};
-
+int mutex_flag = 0;
 #define XMKG_M_ID     		0X2d81 //a
 #define XMKG_X_ID      		0Xeb38
 #define XMKG_ENTER_ID      	0Xced9
@@ -289,18 +289,20 @@ iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key,
 
 static void
 request_completed (void *cls, struct MHD_Connection *connection,
-                   void **con_cls, enum MHD_RequestTerminationCode toe)
+                   void **ptr, enum MHD_RequestTerminationCode toe)
 {
-  struct connection_info_struct *con_info = *con_cls;
-  if (NULL == con_info)
-    return;
+ // struct connection_info_struct *con_info = *con_cls;
+ // if (NULL == con_info)
+ //   return;
 
-  if (con_info->connectiontype == POST)
-    {
-      MHD_destroy_post_processor (con_info->postprocessor);
-    }
-  free (con_info);
-  *con_cls = NULL;
+  //if (con_info->connectiontype == POST)
+  //  {
+  //    MHD_destroy_post_processor (con_info->postprocessor);
+   // }
+    //if(!con_info)
+  		//free (con_info);
+  //*con_cls = NULL;
+//	DEBUG();
 }
 
 
@@ -308,13 +310,16 @@ static int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
                       const char *version, const char *upload_data,
-                      size_t *upload_data_size, void **con_cls)
+                      size_t *upload_data_size, void **ptr)
 {
-	struct connection_info_struct *con_info = *con_cls;
+//	printf("The ID of this thread is: %ld\n", (long int)syscall(224)); 
+	while(mutex_flag==1);
+	mutex_flag = 1;
+//DEBUG();	//struct connection_info_struct *con_info = *con_cls;
 int i=-1;
 int len2 =0;
 
-
+static int dummy;
 char *ToUserName;
 char *CreateTime;
 char *FromUserName;
@@ -326,21 +331,12 @@ char *re_body;
   time(&now);
   tblock = localtime(&now);
 
-  if (NULL == *con_cls)
-    {		
-      struct connection_info_struct *con_info;
-
-      con_info = malloc (sizeof (struct connection_info_struct));
-      if (NULL == con_info)
-      {
-        //printf("return MHD_NO \n");
-        return MHD_NO;
-      }
-      con_info->answerstring = NULL;
-      //printf("method2 =%s \n",method);
-
-      *con_cls = (void *) con_info;
-
+if (&dummy != *ptr)
+    {
+      /* The first time only the headers are valid,
+         do not respond in the first round... */
+      *ptr = &dummy;
+      mutex_flag = 0;
       return MHD_YES;
     }
   
@@ -365,6 +361,7 @@ char *re_body;
 			(unsigned   char)mac[0], (unsigned   char)mac[1],  (unsigned   char)mac[2], (unsigned   char)mac[3], (unsigned   char)mac[4], (unsigned   char)mac[5],
 			(unsigned char)ifreq.ifr_addr.sa_data[2],(unsigned char)ifreq.ifr_addr.sa_data[3],(unsigned char)ifreq.ifr_addr.sa_data[4],(unsigned char)ifreq.ifr_addr.sa_data[5],
 			softversion,hostname,startTime);
+		mutex_flag = 0;
 		return send_page (connection, returnstr);
     }
   
@@ -401,8 +398,9 @@ char *re_body;
 			{		  
 				len2 = atoi(length);
 				//printf("len2=%d\n",len2); 
-				//re_body = (uint8_t*)calloc(len2,sizeof(uint8_t));
-				//strncpy(re_body,body,len2);
+				re_body = (uint8_t*)calloc(len2,sizeof(uint8_t)+8);
+				strncpy(re_body,body,len2);
+				re_body[len2]='\0';
 				printf("[%d-%d-%d %d:%d:%d] POST RECIEVE len=%d url=%s version=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version,body);
 			}
 		
@@ -414,7 +412,10 @@ char *re_body;
 		
 			if(len2 != 0)
 			{
-				json_object *my_object = json_tokener_parse(body);
+				json_object *my_object = json_tokener_parse(re_body);
+			//	DEBUG();
+				free(re_body);
+			//	DEBUG();
 				if(json_object_to_json_string(my_object) != NULL && (0 != strcmp (json_object_to_json_string(my_object), "null")))
 				{
 					  uint16_t address=0;
@@ -447,17 +448,23 @@ char *re_body;
 					    if(0 == strcmp (url, "/zbClient/API/feedback/register"))
 					  	{
 					  		//printf("register ok\n");
+					  		mutex_flag = 0;
 							MXJ_SendRegisterMessage( address, MXJ_REGISTER_OK);
+							mutex_flag = 1;
 					  	}
 						if(0 == strcmp (url, "/zbClient/API/delete"))
 					  	{
 					  		//printf("delete\n");
+					  		mutex_flag = 0;
 							MXJ_SendRegisterMessage( address, MXJ_REGISTER_FAILED);
+							mutex_flag = 1;
 					  	}
 						if(0 == strcmp (url, "/zbClient/API/get/state"))
 					  	{
 					  		//printf("get state\n");
+					  		mutex_flag = 0;
 							MXJ_GetStateMessage(address);
+							mutex_flag = 1;
 					  	}
 						if(0 == strcmp (url, "/zbClient/API/send"))
 					  	{
@@ -487,32 +494,44 @@ char *re_body;
 							{
 								if(index == 1)
 								{
+									mutex_flag = 0;
 									MXJ_SendCtrlMessage(address ,resourceSum,commandint , 2 , 2 );
+									mutex_flag = 1;
 								}
 								else if(index == 2)
 								{
+									mutex_flag = 0;
 									MXJ_SendCtrlMessage(address ,resourceSum, 2 ,commandint, 2 );
+									mutex_flag = 1;
 								}
 								else if(index == 3)
 								{
+									mutex_flag = 0;
 									MXJ_SendCtrlMessage(address ,resourceSum, 2, 2 , commandint );
+									mutex_flag = 1;
 								}
 							}
 					  	}
 						if(0 == strcmp (url, "/zbClient/API/info/get"))
 					  	{
 					  		//printf("get device\n");
+					  		mutex_flag = 0;
 							MXJ_GetIdxMessage(address);
+							mutex_flag = 1;
 					  	}
 						if(0 == strcmp (url, "/zbClient/API/ping"))
 					  	{
 					  		//printf("PING request\n");
+					  		mutex_flag = 0;
 							MXJ_SendPingMessage(address);
+							mutex_flag = 1;
 					  	}
 						if(0 == strcmp (url, "/zbClient/API/value/get"))
 					  	{
 					  		//printf("get data\n");
+					  		mutex_flag = 0;
 							MXJ_GetStateMessage(address);
+							mutex_flag = 1;
 					  	}
 						
 						
@@ -523,17 +542,34 @@ char *re_body;
 			}
 		
 		*upload_data_size = 0;
+		mutex_flag = 0;
 		return MHD_YES;
 	  }
 	  else if(post_type == 2)
+	  {
+	  	//DEBUG();
+	  		*ptr = NULL; /* clear context pointer */
+	  	mutex_flag = 0;
 	  	  return send_page (connection,askpage);
+	  }
 	  else if(post_type == 1)
+	  {
+	  	//DEBUG();
+	  	*ptr = NULL; /* clear context pointer */
+	  	mutex_flag = 0;
 		  return send_page (connection,askpage);
+	  }
 	  else
+	  {
+	  	//DEBUG();
+	  	*ptr = NULL; /* clear context pointer */
+	  	mutex_flag = 0;
 		  return send_page (connection, askpage);  
+	  }
   	}
-
-
+		//DEBUG();
+	*ptr = NULL; /* clear context pointer */
+		mutex_flag = 0;
   return send_page (connection, errorpage);
 }
 
@@ -541,6 +577,31 @@ char *re_body;
 
 uint8_t fifo_add(uint8_t *data,uint8_t len)
 {
+	int i;
+	while(mutex_flag==1);
+	mutex_flag = 1;
+	if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
+	{
+		fprintf(sp,"[%d-%d-%d %d:%d:%d] USART SEND len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
+		for(i=0;i<len;i++)
+		  {
+		    fprintf(sp,"%02x ",data[i]);
+		  }
+		  fprintf(sp,"\n");
+		  fclose(sp);
+	}
+
+	printf("[%d-%d-%d %d:%d:%d] USART SEND len=%d data=", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len);
+		for(i=0;i<len;i++)
+	{
+		serialPutchar(usart_fd,data[i]);
+		printf("%02x ",data[i]);
+	}
+	printf("\n");
+
+	digitalWrite(27,LOW);
+	mutex_flag = 0;
+	/*
 	uint8_t ii;
 	fifo[fifo_end].len=len;
   for(ii=0;ii<len;ii++)
@@ -554,7 +615,7 @@ uint8_t fifo_add(uint8_t *data,uint8_t len)
       fifo_end=0;
       fifo_jinwei=1;
   }
-  
+  */
   return 1;
 }
 
@@ -612,6 +673,7 @@ void send_usart(uint8_t *data,uint8_t len) //id,state1,state2,state3 1=?a,0=1?,2
 
 void thread_send(void)
 {
+	/*
 	while(1)
 	{
 		uint8_t i;
@@ -677,6 +739,7 @@ void thread_send(void)
 		
 		//sleep(1);
 	}
+	*/
 }
 
 
@@ -687,6 +750,7 @@ void thread_send(void)
 
 void recieve_usart(uint8_t *rx,uint8_t len)
 {
+	mutex_flag = 1;
   int i=0,j=0;
   int id=0,cid=0;
   char eventDataStr[50];
@@ -702,7 +766,23 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 	  printf("%02x ",rx[i]);
   printf("\n");
 
+	posturl = curl_easy_init();
+		struct curl_slist *list = NULL;
 
+	if(posturl){
+
+		list = curl_slist_append(list, "Content-Type: application/json");
+		curl_easy_setopt(posturl, CURLOPT_HTTPHEADER, list);
+		curl_easy_setopt(posturl, CURLOPT_URL, "127.0.0.1:10080/api/devices");
+		curl_easy_setopt(posturl, CURLOPT_HTTPPOST, 1L);
+		curl_easy_setopt(posturl, CURLOPT_TIMEOUT, 1);
+		curl_easy_setopt(posturl, CURLOPT_WRITEFUNCTION, writer);
+		//curl_easy_setopt(posturl, CURLOPT_WRITEDATA, &headerStr);
+	}
+	else
+	{
+		return;
+	}
   
   
   if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
@@ -741,6 +821,7 @@ void recieve_usart(uint8_t *rx,uint8_t len)
     case MXJ_CTRL_UP:
 	{
 		char* event;
+		eventDataStr[0] = '\0';
 		switch(rx[9])
 		{
 			case 0: event = "PressDown";break;
@@ -1220,6 +1301,10 @@ void recieve_usart(uint8_t *rx,uint8_t len)
 
     
   }
+
+  curl_easy_cleanup(posturl);
+	digitalWrite(27,LOW);
+  mutex_flag = 0;
 }
 
 void thread(void)
@@ -1325,7 +1410,7 @@ void thread(void)
 int main(void)
 {
 	pthread_t id;
-    pthread_t send_usart_pr; 
+//    pthread_t send_usart_pr; 
   struct MHD_Daemon *daemon;
   uint8_t i=0;
 	printf_file("ZBCLIENT STARTING...\n");
@@ -1351,7 +1436,7 @@ int main(void)
 	}
 	printf("serial test start ...\n");
 
-	//ret=pthread_create(&id,NULL,(void *) thread,NULL);
+
 	if(pthread_create(&id,NULL,(void *) thread,NULL)!=0)
 	{
 		printf ("Create pthread error!\n");
@@ -1360,15 +1445,16 @@ int main(void)
 	
    //printf("start server ...\n");
 
-if(pthread_create(&send_usart_pr,NULL,(void *) thread_send,NULL)!=0)
-	{
-		printf ("Create pthread error!\n");
-		return (1);
-	}
+//if(pthread_create(&send_usart_pr,NULL,(void *) thread_send,NULL)!=0)
+//	{
+//		printf ("Create pthread error!\n");
+//		return (1);
+//	}
+
 	
   daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, PORT, NULL, NULL,
                              &answer_to_connection, NULL,
-                             MHD_OPTION_NOTIFY_COMPLETED, request_completed,
+                             MHD_OPTION_NOTIFY_COMPLETED, NULL,
                              NULL, MHD_OPTION_END);
   if (NULL == daemon)
   {
@@ -1376,25 +1462,14 @@ if(pthread_create(&send_usart_pr,NULL,(void *) thread_send,NULL)!=0)
     return 1;
   }
 
-  posturl = curl_easy_init();
-  struct curl_slist *list = NULL;
 
-	if(posturl){
 
-		list = curl_slist_append(list, "Content-Type: application/json");
-		curl_easy_setopt(posturl, CURLOPT_HTTPHEADER, list);
-		curl_easy_setopt(posturl, CURLOPT_URL, "127.0.0.1:10080/api/devices");
-		curl_easy_setopt(posturl, CURLOPT_HTTPPOST, 1L);
-		curl_easy_setopt(posturl, CURLOPT_WRITEFUNCTION, writer);
-		//curl_easy_setopt(posturl, CURLOPT_WRITEDATA, &headerStr);
-	}
-	else
-	   return (1);
+
   
-   pinMode (24, OUTPUT);
-   pinMode (27, OUTPUT);
+   pinMode (24, OUTPUT);//blue
+   pinMode (27, OUTPUT);//yellow
    pinMode (25, INPUT) ;
-   pinMode (22, OUTPUT);
+   pinMode (22, OUTPUT);//join
 
   //
   //MXJ_GetIdxMessage( 0xe768 );
@@ -1403,7 +1478,7 @@ if(pthread_create(&send_usart_pr,NULL,(void *) thread_send,NULL)!=0)
   //sleep(1);
 
   	digitalWrite(24,HIGH);
-
+	digitalWrite(27,LOW);
   	digitalWrite(22,HIGH);
 	
   	usleep(500000);
@@ -1416,12 +1491,21 @@ if(pthread_create(&send_usart_pr,NULL,(void *) thread_send,NULL)!=0)
 	static int flag_led = 1;
 	while(1)
 	{  
-		//usleep(500000);
 		
-		//digitalWrite(22,HIGH);
-		sleep(30);
-		//digitalWrite(22,LOW);
-		usleep(500000);
+		if(permitjoin == 1)
+		{
+			digitalWrite(22,LOW);
+			usleep(500000);
+			digitalWrite(22,HIGH);
+			permitjoin = 0;
+		}
+	
+		if(digitalRead (25) == 1)
+			digitalWrite(24,HIGH);
+		else
+			digitalWrite(24,LOW);	
+		
+
 		
 	}
 	
