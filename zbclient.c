@@ -1500,6 +1500,7 @@ int main(void)
 			permitjoin = 0;
 		}
 	
+		usleep(5000);
 		if(digitalRead (25) == 1)
 			digitalWrite(24,HIGH);
 		else
