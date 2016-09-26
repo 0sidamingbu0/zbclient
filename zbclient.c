@@ -401,12 +401,12 @@ if (&dummy != *ptr)
 				re_body = (uint8_t*)calloc(len2,sizeof(uint8_t)+8);
 				strncpy(re_body,body,len2);
 				re_body[len2]='\0';
-				printf("[%d-%d-%d %d:%d:%d] POST RECIEVE len=%d url=%s version=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version,body);
+				printf("[%d-%d-%d %d:%d:%d] POST RECIEVE len=%d url=%s version=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version,re_body);
 			}
 		
 			if ((sp = fopen("/var/log/zbclient.log","a+")) != NULL)
 			{
-				fprintf(sp,"[%d-%d-%d %d:%d:%d] POST RECIEVE len=%d url=%s version=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version,body);
+				fprintf(sp,"[%d-%d-%d %d:%d:%d] POST RECIEVE len=%d url=%s version=%s body=%s\n", tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec,len2, url, version,re_body);
 				fclose(sp);
 			}
 		
