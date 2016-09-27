@@ -750,6 +750,7 @@ void thread_send(void)
 
 void recieve_usart(uint8_t *rx,uint8_t len)
 {
+	while(mutex_flag == 1);
 	mutex_flag = 1;
   int i=0,j=0;
   int id=0,cid=0;
